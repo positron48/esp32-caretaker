@@ -16,3 +16,44 @@
 
 ---
 
+теперь нужно подсчитать какой процент времени кажое из ядер заняты работой
+
+---
+
+давай настроим FreeRTOS в platformio. Сейчас ошибка
+
+---
+
+/home/ubuntu/Arduino/ESP32-CAM_TESTS/src/main.cpp:79: undefined reference to `vTaskGetRunTimeStats'
+collect2: error: ld returned 1 exit status
+*** [.pio/build/esp32cam/firmware.elf] Error 1
+
+все еще ошибка, давай переключаться на esp-idf
+
+---
+
+Я запускаю через platformio:
+main/main.cpp переименовал в src/main.cpp, т.к. platformio необходима папка src.
+Также есть ошибки в main.cpp, что не так?
+
+---
+
+теперь такие ошибки
+
+---
+
+все ок, для истории вывод из терминала:
+
+LED is toggling
+Run Time Stats:
+Stats           69411           <1%
+IDLE0           25061128                99%
+IDLE1           25017325                99%
+Log             3193            <1%
+Blink           9829            <1%
+ipc0            9376            <1%
+ipc1            10137           <1%
+Tmr Svc         21              <1%
+
+---
+
