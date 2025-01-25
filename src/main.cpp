@@ -3,6 +3,7 @@
 #include "include/blink_task.h"
 #include "include/log_task.h"
 #include "include/wifi_manager.h"
+#include "include/http_server_task.h"
 
 // Пин встроенного светодиода на ESP32-CAM (чаще всего GPIO 4 для AI Thinker)
 const int ledPin = 4;
@@ -20,9 +21,10 @@ void setup() {
 
     // Инициализация времени для статистики
     unsigned long startTime = micros();
-    core0Stats.lastCheck = startTime;
-    core1Stats.lastCheck = startTime;
-
+    blinkTaskStats.lastCheck = startTime;
+    logTaskStats.lastCheck = startTime;
+    httpTaskStats.lastCheck = startTime;
+    
     // Создание задачи для мигания светодиода на ядре 0
     xTaskCreatePinnedToCore(
         TaskBlink,   // Функция задачи
@@ -43,6 +45,17 @@ void setup() {
         1,           // Приоритет задачи
         NULL,        // Дескриптор задачи
         1            // Ядро, на котором будет выполняться задача
+    );
+
+    // Создаем задачу для HTTP сервера на ядре 1
+    xTaskCreatePinnedToCore(
+        TaskHttpServer,
+        "HttpServer",
+        4096,        // Увеличенный размер стека для HTTP сервера
+        NULL,
+        1,
+        NULL,
+        1
     );
 }
 

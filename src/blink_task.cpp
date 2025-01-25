@@ -14,15 +14,15 @@ void TaskBlink(void *pvParameters) {
     const int pwmValue = (4095 * 1) / 100;  // 0.5% от максимума
     
     while (true) {
-        updateTaskStats(core0Stats, true);
+        updateTaskStats(blinkTaskStats, true);
         ledcWrite(LED_CHANNEL, pwmValue);  // Включить светодиод на 0.5% яркости
-        updateTaskStats(core0Stats, false);
+        updateTaskStats(blinkTaskStats, false);
         
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         
-        updateTaskStats(core0Stats, true);
+        updateTaskStats(blinkTaskStats, true);
         ledcWrite(LED_CHANNEL, 0);  // Выключить светодиод
-        updateTaskStats(core0Stats, false);
+        updateTaskStats(blinkTaskStats, false);
         
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }

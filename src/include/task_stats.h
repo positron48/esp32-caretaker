@@ -1,6 +1,8 @@
 #pragma once
 
 struct TaskStats {
+    const char* taskName;        // Имя задачи
+    int coreId;                 // Номер ядра
     unsigned long totalTime;     // Общее время работы в микросекундах
     unsigned long activeTime;    // Время активной работы в микросекундах
     unsigned long lastCheck;     // Время последней проверки
@@ -12,5 +14,7 @@ void updateTaskStats(TaskStats &stats, bool startActive);
 float calculateCPUUsage(TaskStats &stats);
 void resetStats(TaskStats &stats);
 
-extern TaskStats core0Stats;
-extern TaskStats core1Stats; 
+// Статистика для каждой задачи
+extern TaskStats blinkTaskStats;
+extern TaskStats logTaskStats;
+extern TaskStats httpTaskStats; 

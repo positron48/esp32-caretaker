@@ -1,8 +1,10 @@
 #include "include/task_stats.h"
 #include <Arduino.h>
 
-TaskStats core0Stats = {0, 0, 0, 0, false};
-TaskStats core1Stats = {0, 0, 0, 0, false};
+// Инициализация статистики для каждой задачи
+TaskStats blinkTaskStats = {"Blink", 0, 0, 0, 0, 0, false};
+TaskStats logTaskStats = {"Log", 1, 0, 0, 0, 0, false};
+TaskStats httpTaskStats = {"HTTP Server", 1, 0, 0, 0, 0, false};
 
 void updateTaskStats(TaskStats &stats, bool startActive) {
     unsigned long currentTime = micros();

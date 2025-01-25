@@ -1,37 +1,53 @@
 #include "include/log_task.h"
 #include "include/task_stats.h"
+#include "include/http_server_task.h"
 #include <Arduino.h>
 
 void TaskLog(void *pvParameters) {
     while (true) {
-        updateTaskStats(core1Stats, true);
+        updateTaskStats(logTaskStats, true);
         
-        float core0Usage = calculateCPUUsage(core0Stats);
-        float core1Usage = calculateCPUUsage(core1Stats);
+        Serial.println("\nTask Usage Statistics:");
         
-        Serial.println("\nCPU Usage Statistics:");
-        Serial.print("Core 0 (Blink Task): ");
-        Serial.print(core0Usage, 4);
-        Serial.print("% (Active: ");
-        Serial.print(core0Stats.activeTime);
-        Serial.print("us / Total: ");
-        Serial.print(core0Stats.totalTime);
-        Serial.println("us)");
+        // Статистика для Blink Task
+        float blinkUsage = calculateCPUUsage(blinkTaskStats);
+        Serial.printf("%s (Core %d): %.4f%% (Active: %lu us / Total: %lu us)\n",
+            blinkTaskStats.taskName,
+            blinkTaskStats.coreId,
+            blinkUsage,
+            blinkTaskStats.activeTime,
+            blinkTaskStats.totalTime
+        );
 
-        Serial.print("Core 1 (Log Task): ");
-        Serial.print(core1Usage, 4);
-        Serial.print("% (Active: ");
-        Serial.print(core1Stats.activeTime);
-        Serial.print("us / Total: ");
-        Serial.print(core1Stats.totalTime);
-        Serial.println("us)");
+        // Статистика для HTTP Server Task
+        float httpUsage = calculateCPUUsage(httpTaskStats);
+        Serial.printf("%s (Core %d): %.4f%% (Active: %lu us / Total: %lu us)\n",
+            httpTaskStats.taskName,
+            httpTaskStats.coreId,
+            httpUsage,
+            httpTaskStats.activeTime,
+            httpTaskStats.totalTime
+        );
+
+        // Статистика для Log Task
+        float logUsage = calculateCPUUsage(logTaskStats);
+        Serial.printf("%s (Core %d): %.4f%% (Active: %lu us / Total: %lu us)\n",
+            logTaskStats.taskName,
+            logTaskStats.coreId,
+            logUsage,
+            logTaskStats.activeTime,
+            logTaskStats.totalTime
+        );
+
+        // Информация о HTTP сервере
         Serial.println("------------------------");
 
-        updateTaskStats(core1Stats, false);
+        updateTaskStats(logTaskStats, false);
 
-        // Сброс статистики обоих ядер
-        resetStats(core0Stats);
-        resetStats(core1Stats);
+        // Сброс статистики всех задач
+        resetStats(blinkTaskStats);
+        resetStats(logTaskStats);
+        resetStats(httpTaskStats);
         
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
