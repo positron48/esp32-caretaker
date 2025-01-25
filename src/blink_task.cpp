@@ -5,17 +5,23 @@
 const int ledPin = 4;
 
 void TaskBlink(void *pvParameters) {
-    pinMode(ledPin, OUTPUT);
+    // Настройка PWM для светодиода
+    ledcSetup(LED_CHANNEL, LED_FREQUENCY, LED_RESOLUTION);
+    ledcAttachPin(ledPin, LED_CHANNEL);
+    
+    // Вычисляем значение для 0.5% яркости
+    // При 12-битном разрешении максимальное значение 4095
+    const int pwmValue = (4095 * 1) / 100;  // 0.5% от максимума
     
     while (true) {
         updateTaskStats(core0Stats, true);
-        digitalWrite(ledPin, HIGH);   // Включить светодиод
+        ledcWrite(LED_CHANNEL, pwmValue);  // Включить светодиод на 0.5% яркости
         updateTaskStats(core0Stats, false);
         
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         
         updateTaskStats(core0Stats, true);
-        digitalWrite(ledPin, LOW);    // Выключить светодиод
+        ledcWrite(LED_CHANNEL, 0);  // Выключить светодиод
         updateTaskStats(core0Stats, false);
         
         vTaskDelay(1000 / portTICK_PERIOD_MS);
