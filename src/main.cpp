@@ -15,24 +15,26 @@ void setup() {
     // Инициализация пина светодиода как выход
     pinMode(ledPin, OUTPUT);
 
-    // Создание задачи для мигания светодиода
-    xTaskCreate(
+    // Создание задачи для мигания светодиода на ядре 0
+    xTaskCreatePinnedToCore(
         TaskBlink,   // Функция задачи
         "Blink",     // Имя задачи
         1024,        // Размер стека задачи
         NULL,        // Параметры задачи
         1,           // Приоритет задачи
-        NULL         // Дескриптор задачи
+        NULL,        // Дескриптор задачи
+        0            // Ядро, на котором будет выполняться задача
     );
 
-    // Создание задачи для вывода логов
-    xTaskCreate(
+    // Создание задачи для вывода логов на ядре 1
+    xTaskCreatePinnedToCore(
         TaskLog,     // Функция задачи
         "Log",       // Имя задачи
         1024,        // Размер стека задачи
         NULL,        // Параметры задачи
         1,           // Приоритет задачи
-        NULL         // Дескриптор задачи
+        NULL,        // Дескриптор задачи
+        1            // Ядро, на котором будет выполняться задача
     );
 }
 
@@ -54,6 +56,6 @@ void TaskBlink(void *pvParameters) {
 void TaskLog(void *pvParameters) {
     while (true) {
         Serial.println("LED is toggling");
-        vTaskDelay(1000 / portTICK_PERIOD_MS); // Задержка 2 секунды
+        vTaskDelay(1000 / portTICK_PERIOD_MS); // Задержка 1 секунда
     }
 } 
