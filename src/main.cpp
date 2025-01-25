@@ -8,15 +8,15 @@
 #include "driver/gptimer.h"
 #include "driver/ledc.h"
 
+// Включение заголовочных файлов задач
+#include "tasks/BlinkTask.h"
+#include "tasks/LogTask.h"
+#include "tasks/StatsTask.h"
+
 static const char* TAG = "Main";
 
 // Пин встроенного светодиода на ESP32-CAM (чаще всего GPIO4 для AI Thinker)
 const int ledPin = 4;
-
-// Декларация задач
-void TaskBlink(void *pvParameters);
-void TaskLog(void *pvParameters);
-void TaskStats(void *pvParameters);
 
 // Конфигурация таймера для Run-Time Stats
 #define TIMER_DIVIDER         80           // Делитель: таймер считает каждую микросекунду
@@ -97,6 +97,7 @@ extern "C" void app_main() {
     ledc_channel.gpio_num    = LEDC_OUTPUT_IO;
     ledc_channel.duty        = 0;                      // Начальная яркость 0%
     ledc_channel.hpoint      = 0;
+    // ledc_channel.flags       = 0;                      // Нет специальных флагов
 
     ledc_err = ledc_channel_config(&ledc_channel);
     if (ledc_err != ESP_OK) {
@@ -138,51 +139,4 @@ extern "C" void app_main() {
         NULL,
         1
     );
-}
-
-void TaskBlink(void *pvParameters) {
-    // Задача мигания светодиода
-    while (true) {           
-        // Установка яркости
-        uint32_t duty = (uint32_t)(255 * 0.005); // 0.5% яркости
-        ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty);
-        ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS); // Задержка 1 секунда
-
-        // Выключение светодиода (0% яркости)
-        duty = 0;
-        ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty);
-        ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS); // Задержка 1 секунда
-    }
-}
-
-void TaskLog(void *pvParameters) {
-    while (true) {
-        printf("LED is toggling\n");
-        vTaskDelay(1000 / portTICK_PERIOD_MS); // Задержка 1 секунда
-    }
-}
-
-void TaskStats(void *pvParameters) {
-    char *buffer = NULL;
-    while (true) {
-        // Получение размера буфера
-        size_t bufferLen = uxTaskGetNumberOfTasks() * 40;
-        buffer = (char *)malloc(bufferLen);
-        if (buffer == NULL) {
-            printf("Не удалось выделить память для статистики\n");
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
-            continue;
-        }
-
-        // Получение и вывод статистики
-        vTaskGetRunTimeStats(buffer);
-        printf("Run Time Stats:\n%s\n", buffer);
-        free(buffer);
-
-        vTaskDelay(5000 / portTICK_PERIOD_MS); // Задержка 5 секунд
-    }
 } 

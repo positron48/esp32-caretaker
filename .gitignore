@@ -3,3 +3,28 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Libraries #
+#############
+*.a
+*.lib
+
+# Executables #
+###############
+*.out
+*.app
+*.elf
+
+# Build Folders #
+#################
+.pio/
+build/
