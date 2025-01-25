@@ -2,6 +2,7 @@
 #include "include/task_stats.h"
 #include "include/blink_task.h"
 #include "include/log_task.h"
+#include "include/wifi_manager.h"
 
 // Пин встроенного светодиода на ESP32-CAM (чаще всего GPIO 4 для AI Thinker)
 const int ledPin = 4;
@@ -13,6 +14,9 @@ void setup() {
 
     // Инициализация пина светодиода как выход
     pinMode(ledPin, OUTPUT);
+
+    // Инициализация WiFi
+    initWiFi();
 
     // Инициализация времени для статистики
     unsigned long startTime = micros();
@@ -43,5 +47,7 @@ void setup() {
 }
 
 void loop() {
-    // Пусто, так как задачи выполняются в фоновом режиме
+    // Проверка состояния WiFi каждые 5 секунд
+    ensureWiFiConnection();
+    delay(5000);
 } 
