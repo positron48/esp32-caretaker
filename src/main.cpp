@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "include/task_stats.h"
 #include "include/blink_task.h"
-#include "include/log_task.h"
 #include "include/wifi_manager.h"
 #include "include/http_server_task.h"
 
@@ -19,11 +18,6 @@ void setup() {
     // Инициализация WiFi
     initWiFi();
 
-    // Инициализация времени для статистики
-    unsigned long startTime = micros();
-    blinkTaskStats.lastCheck = startTime;
-    logTaskStats.lastCheck = startTime;
-    httpTaskStats.lastCheck = startTime;
     
     // Создание задачи для мигания светодиода на ядре 0
     xTaskCreatePinnedToCore(
@@ -34,17 +28,6 @@ void setup() {
         1,           // Приоритет задачи
         NULL,        // Дескриптор задачи
         0            // Ядро, на котором будет выполняться задача
-    );
-
-    // Создание задачи для вывода логов на ядре 1
-    xTaskCreatePinnedToCore(
-        TaskLog,     // Функция задачи
-        "Log",       // Имя задачи
-        2048,        // Увеличили размер стека для доп. вычислений
-        NULL,        // Параметры задачи
-        1,           // Приоритет задачи
-        NULL,        // Дескриптор задачи
-        1            // Ядро, на котором будет выполняться задача
     );
 
     // Создаем задачу для HTTP сервера на ядре 1
