@@ -1,9 +1,10 @@
 #include <Arduino.h>
-#include "include/task_stats.h"
-#include "include/blink_task.h"
-#include "include/log_task.h"
-#include "include/wifi_manager.h"
-#include "include/http_server_task.h"
+#include "task_stats.h"
+#include "blink_task.h"
+#include "log_task.h"
+#include "wifi_manager.h"
+#include "http_server_task.h"
+#include "camera_config.h"
 #include <esp_camera.h>
 
 // Camera pins for ESP32-CAM
@@ -47,17 +48,17 @@ bool initCamera() {
     config.pin_sccb_scl = SIOC_GPIO_NUM;
     config.pin_pwdn = PWDN_GPIO_NUM;
     config.pin_reset = RESET_GPIO_NUM;
-    config.xclk_freq_hz = 20000000;
-    config.pixel_format = PIXFORMAT_JPEG;
+    config.xclk_freq_hz = XCLK_FREQ;
+    config.pixel_format = PIXEL_FORMAT;
 
     // Init with high specs to pre-allocate larger buffers
     if (psramFound()) {
-        Serial.printf("PSRAM found\n");
-        config.frame_size = FRAMESIZE_VGA;
-        config.jpeg_quality = 10;  // 0-63, lower means higher quality
-        config.fb_count = 2;
+        Serial.println("PSRAM found");
+        config.frame_size = FRAME_SIZE;
+        config.jpeg_quality = JPEG_QUALITY;
+        config.fb_count = FB_COUNT;
     } else {
-        Serial.printf("PSRAM not found\n");
+        Serial.println("PSRAM not found");
         config.frame_size = FRAMESIZE_SVGA;
         config.jpeg_quality = 12;
         config.fb_count = 1;
@@ -71,8 +72,10 @@ bool initCamera() {
     }
 
     sensor_t * s = esp_camera_sensor_get();
-    s->set_framesize(s, FRAMESIZE_VGA);
-    s->set_quality(s, 10);
+    s->set_framesize(s, FRAME_SIZE);
+    s->set_quality(s, JPEG_QUALITY);
+    s->set_brightness(s, 1);  // Увеличиваем яркость
+    s->set_saturation(s, 1);  // Увеличиваем насыщенность
     
     return true;
 }

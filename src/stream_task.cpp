@@ -1,4 +1,5 @@
 #include "stream_task.h"
+#include "stream_constants.h"
 
 // Initialize global variables
 bool isStreaming = false;

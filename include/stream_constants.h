@@ -8,7 +8,7 @@ constexpr size_t MAX_FRAME_SIZE = 32 * 1024; // Уменьшаем максим�
 constexpr size_t STREAM_TASK_STACK_SIZE = 4096;
 constexpr uint8_t STREAM_TASK_PRIORITY = 1;
 constexpr uint8_t STREAM_TASK_CORE = 1;
-constexpr uint32_t STREAM_DELAY_MS = 50; // Уменьшаем задержку между кадрами
+constexpr uint32_t STREAM_DELAY_MS = 1; // Уменьшаем задержку между кадрами
 
 // Stream string constants
 constexpr const char* PART_BOUNDARY = "123456789000000000000987654321";
