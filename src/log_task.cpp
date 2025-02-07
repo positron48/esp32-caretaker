@@ -21,12 +21,12 @@ void TaskLog(void *pvParameters) {
 
         // Get task list with state, priority, stack, and task number
         // Note: vTaskList output depends on configuration and may not include core affinities by default
-        vTaskList(listBuffer);
-        Serial.println("Task List:");
-        Serial.println(listBuffer);
+        // vTaskList(listBuffer);
+        // Serial.println("Task List:");
+        // Serial.println(listBuffer);
 
         Serial.println("=====================================");
 
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 } 

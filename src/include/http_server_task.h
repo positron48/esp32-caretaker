@@ -1,7 +1,8 @@
 #pragma once
+
+#include <Arduino.h>
 #include <WebServer.h>
+#include "stream_task.h"
 
-void TaskHttpServer(void *pvParameters);
-
-// Глобальный объект сервера, чтобы он был доступен для обработчиков
+void TaskHttpServer(void* parameter);
 extern WebServer server; 
