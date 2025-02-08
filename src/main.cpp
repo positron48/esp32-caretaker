@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include "task_stats.h"
-#include "blink_task.h"
 #include "log_task.h"
 #include "wifi_manager.h"
 #include "http_server_task.h"
 #include "camera_config.h"
 #include <esp_camera.h>
+#include "SPIFFS.h"
 
 // LED pin
 const int ledPin = LED_PIN;
@@ -67,28 +67,25 @@ void setup() {
         return;
     }
 
+    // Initialize LED
+    ledcSetup(LED_CHANNEL, LED_FREQUENCY, LED_RESOLUTION);
+    ledcAttachPin(ledPin, LED_CHANNEL);
+    ledcWrite(LED_CHANNEL, 0); // Start with LED off
+
+    // Initialize SPIFFS
+    if(!SPIFFS.begin(true)) {
+        Serial.println("SPIFFS Mount Failed");
+        return;
+    }
+
     // Initialize camera
     if(!initCamera()) {
         Serial.println("Camera initialization failed");
         return;
     }
 
-    // Initialize LED pin
-    pinMode(ledPin, OUTPUT);
-
     // Initialize WiFi
     initWiFi();
-
-    // Create blink task on core 0
-    xTaskCreatePinnedToCore(
-        TaskBlink,
-        "Blink",
-        2048,
-        NULL,
-        1,
-        NULL,
-        0
-    );
 
     // Create log task on core 1
     xTaskCreatePinnedToCore(
