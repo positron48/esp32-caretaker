@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>ESP32-CAM Stream</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            text-align: center; 
+            background-color: #f0f0f0; 
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 30px; 
+        }
+        .button-container { 
+            margin: 20px 0; 
+        }
+        button { 
+            background-color: #4CAF50; 
+            border: none; 
+            color: white; 
+            padding: 15px 32px;
+            text-align: center; 
+            text-decoration: none; 
+            display: inline-block; 
+            font-size: 16px;
+            margin: 4px 2px; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            transition: all 0.3s; 
+        }
+        button:hover { 
+            background-color: #45a049; 
+            transform: translateY(-2px); 
+        }
+        button.stop { 
+            background-color: #f44336; 
+        }
+        button.stop:hover { 
+            background-color: #da190b; 
+        }
+        .stream-container { 
+            margin-top: 20px; 
+            background-color: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        img { 
+            max-width: 100%; 
+            height: auto; 
+            border-radius: 4px; 
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .status.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+    </style>
+</head>
+<body>
+    <h1>ESP32-CAM Stream Control</h1>
+    <div class='button-container'>
+        <button onclick='startStream()'>Start Stream</button>
+        <button class='stop' onclick='stopStream()'>Stop Stream</button>
+    </div>
+    <div class='stream-container'>
+        <img id='stream' style='display:none;'>
+    </div>
+    <div id='status' class='status'></div>
+
+    <script>
+        const streamImg = document.getElementById('stream');
+        const statusDiv = document.getElementById('status');
+        let isStoppingStream = false;
+
+        function showStatus(message, isError = false) {
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status ' + (isError ? 'error' : 'success');
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function startStream() {
+            isStoppingStream = false;
+            streamImg.src = '/stream';
+            streamImg.style.display = 'block';
+            showStatus('Starting stream...');
+
+            streamImg.onerror = function() {
+                if (!isStoppingStream) {
+                    showStatus('Failed to start stream', true);
+                    streamImg.style.display = 'none';
+                }
+            };
+        }
+
+        function stopStream() {
+            isStoppingStream = true;
+            fetch('/stopstream')
+                .then(() => {
+                    streamImg.style.display = 'none';
+                    streamImg.src = '';
+                    showStatus('Stream stopped');
+                })
+                .catch(error => {
+                    showStatus('Failed to stop stream: ' + error, true);
+                });
+        }
+    </script>
+</body>
+</html> 
