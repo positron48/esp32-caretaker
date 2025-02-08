@@ -3,90 +3,212 @@
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>ESP32-CAM Stream</title>
+    <title>ESP32-CAM RC Control</title>
     <style>
+        :root {
+            --primary-color: #4CAF50;
+            --danger-color: #f44336;
+            --control-bg: rgba(0, 0, 0, 0.5);
+            --text-color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            text-align: center; 
-            background-color: #f0f0f0; 
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            min-height: 100vh;
+            overflow: hidden;
+            color: var(--text-color);
         }
-        h1 { 
-            color: #333; 
-            margin-bottom: 30px; 
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .button-container { 
-            margin: 20px 0; 
+
+        .video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: #000;
         }
-        button { 
-            background-color: #4CAF50; 
-            border: none; 
-            color: white; 
-            padding: 15px 32px;
-            text-align: center; 
-            text-decoration: none; 
-            display: inline-block; 
-            font-size: 16px;
-            margin: 4px 2px; 
-            cursor: pointer; 
-            border-radius: 4px; 
-            transition: all 0.3s; 
+
+        .stream-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.2em;
         }
-        button:hover { 
-            background-color: #45a049; 
-            transform: translateY(-2px); 
-        }
-        button.stop { 
-            background-color: #f44336; 
-        }
-        button.stop:hover { 
-            background-color: #da190b; 
-        }
-        .stream-container { 
-            margin-top: 20px; 
-            background-color: white; 
-            padding: 20px; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-        }
-        img { 
-            max-width: 100%; 
-            height: auto; 
-            border-radius: 4px; 
-        }
-        .status {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 4px;
+
+        #stream {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
             display: none;
         }
-        .status.error {
-            background-color: #ffebee;
-            color: #c62828;
-            border: 1px solid #ef9a9a;
+
+        .controls-overlay {
+            position: absolute;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
+
+        .controls-top {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            pointer-events: all;
+        }
+
+        .controls-right {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: all;
+        }
+
+        .joystick-container {
+            width: 200px;
+            height: 200px;
+            background: var(--control-bg);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        #joystick {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            position: relative;
+            touch-action: none;
+        }
+
+        #stick {
+            width: 40%;
+            height: 40%;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+        }
+
+        .button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            background: var(--control-bg);
+            color: var(--text-color);
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .button.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .status {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: none;
+            z-index: 100;
+            background: var(--control-bg);
+            backdrop-filter: blur(5px);
+            pointer-events: all;
+        }
+
+        .status.error {
+            background: rgba(244, 67, 54, 0.8);
+        }
+
         .status.success {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #a5d6a7;
+            background: rgba(76, 175, 80, 0.8);
+        }
+
+        #stream-toggle {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: all;
         }
     </style>
 </head>
 <body>
-    <h1>ESP32-CAM Stream Control</h1>
-    <div class='button-container'>
-        <button onclick='startStream()'>Start Stream</button>
-        <button class='stop' onclick='stopStream()'>Stop Stream</button>
+    <div class="container">
+        <div class="video-container">
+            <div class="stream-placeholder" id="stream-placeholder">
+                No video stream
+            </div>
+            <img id="stream">
+        </div>
+        
+        <div class="controls-overlay">
+            <div class="controls-top">
+                <button class="button" id="quality-button" onclick="toggleQuality()">SD</button>
+                <button class="button" id="led-button" onclick="toggleLED()">LED Off</button>
+            </div>
+            
+            <div class="controls-right">
+                <div class="joystick-container">
+                    <div id="joystick">
+                        <div id="stick"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="status" class="status"></div>
+            <button class="button" onclick="toggleStream()" id="stream-toggle">Start Stream</button>
+        </div>
     </div>
-    <div class='stream-container'>
-        <img id='stream' style='display:none;'>
-    </div>
-    <div id='status' class='status'></div>
 
     <script>
         const streamImg = document.getElementById('stream');
         const statusDiv = document.getElementById('status');
+        const streamPlaceholder = document.getElementById('stream-placeholder');
+        const streamToggle = document.getElementById('stream-toggle');
+        const qualityButton = document.getElementById('quality-button');
+        const ledButton = document.getElementById('led-button');
         let isStoppingStream = false;
+        let isStreaming = false;
+        let isHD = false;
+        let isLedOn = false;
 
         function showStatus(message, isError = false) {
             statusDiv.textContent = message;
@@ -97,32 +219,156 @@
             }, 3000);
         }
 
+        function toggleStream() {
+            if (!isStreaming) {
+                startStream();
+            } else {
+                stopStream();
+            }
+        }
+
         function startStream() {
             isStoppingStream = false;
+            isStreaming = true;
             streamImg.src = '/stream';
             streamImg.style.display = 'block';
+            streamPlaceholder.style.display = 'none';
+            streamToggle.textContent = 'Stop Stream';
+            streamToggle.classList.add('active');
             showStatus('Starting stream...');
 
             streamImg.onerror = function() {
                 if (!isStoppingStream) {
                     showStatus('Failed to start stream', true);
                     streamImg.style.display = 'none';
+                    streamPlaceholder.style.display = 'flex';
+                    isStreaming = false;
+                    streamToggle.textContent = 'Start Stream';
+                    streamToggle.classList.remove('active');
                 }
             };
         }
 
         function stopStream() {
             isStoppingStream = true;
+            isStreaming = false;
             fetch('/stopstream')
                 .then(() => {
                     streamImg.style.display = 'none';
                     streamImg.src = '';
+                    streamPlaceholder.style.display = 'flex';
+                    streamToggle.textContent = 'Start Stream';
+                    streamToggle.classList.remove('active');
                     showStatus('Stream stopped');
                 })
                 .catch(error => {
                     showStatus('Failed to stop stream: ' + error, true);
                 });
         }
+
+        function toggleQuality() {
+            isHD = !isHD;
+            const quality = isHD ? 'HD' : 'SD';
+            qualityButton.textContent = quality;
+            qualityButton.classList.toggle('active', isHD);
+            
+            fetch('/quality?mode=' + quality)
+                .then(response => response.text())
+                .then(result => {
+                    showStatus('Quality changed to ' + quality);
+                })
+                .catch(error => {
+                    showStatus('Failed to change quality: ' + error, true);
+                });
+        }
+
+        function toggleLED() {
+            isLedOn = !isLedOn;
+            const state = isLedOn ? 'on' : 'off';
+            ledButton.textContent = 'LED ' + (isLedOn ? 'On' : 'Off');
+            ledButton.classList.toggle('active', isLedOn);
+            
+            fetch('/led?state=' + state)
+                .then(response => response.text())
+                .then(result => {
+                    showStatus('LED turned ' + state);
+                })
+                .catch(error => {
+                    showStatus('Failed to control LED: ' + error, true);
+                });
+        }
+
+        // Joystick control
+        const joystick = document.getElementById('joystick');
+        const stick = document.getElementById('stick');
+        let isDragging = false;
+        let currentX = 0;
+        let currentY = 0;
+
+        function handleJoystickMove(event) {
+            if (!isDragging) return;
+
+            const rect = joystick.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            // Get touch or mouse position
+            const clientX = event.type.includes('mouse') ? event.clientX : event.touches[0].clientX;
+            const clientY = event.type.includes('mouse') ? event.clientY : event.touches[0].clientY;
+
+            // Calculate relative position from center
+            let x = clientX - rect.left - centerX;
+            let y = clientY - rect.top - centerY;
+
+            // Limit to square
+            const maxOffset = rect.width / 2 - stick.offsetWidth / 2;
+            x = Math.max(-maxOffset, Math.min(maxOffset, x));
+            y = Math.max(-maxOffset, Math.min(maxOffset, y));
+
+            // Update stick position
+            stick.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+
+            // Calculate normalized values (-1 to 1)
+            const normalizedX = x / maxOffset;
+            const normalizedY = -y / maxOffset; // Invert Y for traditional control scheme
+
+            // Only send if values changed significantly
+            if (Math.abs(normalizedX - currentX) > 0.1 || Math.abs(normalizedY - currentY) > 0.1) {
+                currentX = normalizedX;
+                currentY = normalizedY;
+                sendJoystickData(normalizedX, normalizedY);
+            }
+        }
+
+        function resetJoystick() {
+            isDragging = false;
+            stick.style.transform = 'translate(-50%, -50%)';
+            currentX = 0;
+            currentY = 0;
+            sendJoystickData(0, 0);
+        }
+
+        function sendJoystickData(x, y) {
+            fetch('/control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ x, y })
+            }).catch(error => {
+                console.error('Failed to send control data:', error);
+            });
+        }
+
+        // Mouse events
+        stick.addEventListener('mousedown', () => isDragging = true);
+        document.addEventListener('mousemove', handleJoystickMove);
+        document.addEventListener('mouseup', resetJoystick);
+
+        // Touch events
+        stick.addEventListener('touchstart', () => isDragging = true);
+        document.addEventListener('touchmove', handleJoystickMove);
+        document.addEventListener('touchend', resetJoystick);
     </script>
 </body>
 </html> 
