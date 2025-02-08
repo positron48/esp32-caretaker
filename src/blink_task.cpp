@@ -1,5 +1,6 @@
 #include "blink_task.h"
 #include <Arduino.h>
+#include "config.h"
 
 const int ledPin = 4;
 
