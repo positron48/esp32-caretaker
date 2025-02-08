@@ -24,6 +24,10 @@
             min-height: 100vh;
             overflow: hidden;
             color: var(--text-color);
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         .container {
@@ -73,11 +77,15 @@
         .controls-top {
             position: absolute;
             top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 20px;
             display: flex;
-            gap: 20px;
+            align-items: center;
+            gap: 16px;
             pointer-events: all;
+            background: var(--control-bg);
+            padding: 8px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
         }
 
         .controls-right {
@@ -94,6 +102,7 @@
             background: var(--control-bg);
             border-radius: 8px;
             padding: 20px;
+            backdrop-filter: blur(5px);
         }
 
         #joystick {
@@ -118,16 +127,17 @@
         }
 
         .button {
-            padding: 12px 24px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
-            background: var(--control-bg);
+            background: rgba(255, 255, 255, 0.1);
             color: var(--text-color);
             transition: all 0.3s;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            white-space: nowrap;
+            min-width: 80px;
+            text-align: center;
         }
 
         .button:hover {
@@ -136,7 +146,6 @@
 
         .button.active {
             background: var(--primary-color);
-            border-color: var(--primary-color);
         }
 
         .status {
@@ -160,14 +169,6 @@
         .status.success {
             background: rgba(76, 175, 80, 0.8);
         }
-
-        #stream-toggle {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            pointer-events: all;
-        }
     </style>
 </head>
 <body>
@@ -181,6 +182,7 @@
         
         <div class="controls-overlay">
             <div class="controls-top">
+                <button class="button" onclick="toggleStream()" id="stream-toggle">Start Stream</button>
                 <button class="button" id="quality-button" onclick="toggleQuality()">SD</button>
                 <button class="button" id="led-button" onclick="toggleLED()">LED Off</button>
             </div>
@@ -194,7 +196,6 @@
             </div>
 
             <div id="status" class="status"></div>
-            <button class="button" onclick="toggleStream()" id="stream-toggle">Start Stream</button>
         </div>
     </div>
 
@@ -361,14 +362,36 @@
         }
 
         // Mouse events
-        stick.addEventListener('mousedown', () => isDragging = true);
-        document.addEventListener('mousemove', handleJoystickMove);
-        document.addEventListener('mouseup', resetJoystick);
+        stick.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            isDragging = true;
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            e.preventDefault();
+            handleJoystickMove(e);
+        });
+        
+        document.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            resetJoystick();
+        });
 
         // Touch events
-        stick.addEventListener('touchstart', () => isDragging = true);
-        document.addEventListener('touchmove', handleJoystickMove);
-        document.addEventListener('touchend', resetJoystick);
+        stick.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDragging = true;
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            handleJoystickMove(e);
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            resetJoystick();
+        });
     </script>
 </body>
 </html> 
