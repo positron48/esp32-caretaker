@@ -64,7 +64,7 @@ void TaskHttpServer(void* parameter) {
         }
     });
 
-    // Control endpoint for joystick
+    // Control endpoint for joystick and sliders
     server.on("/control", HTTP_POST, [&server]() {
         StaticJsonDocument<200> doc;
         if (server.hasArg("plain")) {
@@ -75,11 +75,17 @@ void TaskHttpServer(void* parameter) {
                 return;
             }
 
-            float x = doc["x"] | 0.0f;
-            float y = doc["y"] | 0.0f;
+            const char* mode = doc["mode"] | "joystick";
 
-            // Process joystick data
-            processJoystickControl(x, y);
+            if (strcmp(mode, "joystick") == 0) {
+                float x = doc["x"] | 0.0f;
+                float y = doc["y"] | 0.0f;
+                processJoystickControl(x, y);
+            } else if (strcmp(mode, "sliders") == 0) {
+                float left = doc["left"] | 0.0f;
+                float right = doc["right"] | 0.0f;
+                processSlidersControl(left, right);
+            }
             
             server.send(200, "text/plain", "OK");
         } else {
