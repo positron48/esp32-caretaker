@@ -1,5 +1,7 @@
 # ESP32-CAM Robot Control with Live Video Streaming
 
++Русская версия: [readme.ru.md](readme.ru.md)
+
 ## Overview
 
 This project implements a remote-controlled robot using an ESP32-CAM board. It features real-time video streaming from the ESP32-CAM and allows for bidirectional control of two motors. The robot can be controlled via a web interface using either a joystick or sliders for motor input. Additionally, the web interface provides controls for adjusting video quality and toggling the on-board LED. Task usage statistics are also collected to monitor system performance.
