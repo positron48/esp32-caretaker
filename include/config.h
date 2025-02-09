@@ -33,6 +33,10 @@
 #define LED_RESOLUTION 12 // Разрешение (1-14 бит)
 #define LED_FREQUENCY 10000 // Частота PWM в Гц
 
+#define LED_BRIGHT_OFF 0 // яркость светодиода
+#define LED_BRIGHT_MID 400
+#define LED_BRIGHT_HIGH 4095
+
 
 // Camera pins for ESP32-CAM
 #define PWDN_GPIO_NUM     32

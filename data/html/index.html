@@ -338,17 +338,23 @@
             let x = clientX - rect.left - centerX;
             let y = clientY - rect.top - centerY;
 
-            // Limit to square
-            const maxOffset = rect.width / 2 - stick.offsetWidth / 2;
-            x = Math.max(-maxOffset, Math.min(maxOffset, x));
-            y = Math.max(-maxOffset, Math.min(maxOffset, y));
+            // Calculate distance from center
+            const distance = Math.sqrt(x * x + y * y);
+            const maxRadius = rect.width / 2 - stick.offsetWidth / 2;
+
+            // If distance is greater than max radius, normalize the coordinates
+            if (distance > maxRadius) {
+                const angle = Math.atan2(y, x);
+                x = Math.cos(angle) * maxRadius;
+                y = Math.sin(angle) * maxRadius;
+            }
 
             // Update stick position
             stick.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
 
             // Calculate normalized values (-1 to 1)
-            const normalizedX = x / maxOffset;
-            const normalizedY = -y / maxOffset; // Invert Y for traditional control scheme
+            const normalizedX = x / maxRadius;
+            const normalizedY = -y / maxRadius; // Invert Y for traditional control scheme
 
             // Only send if values changed significantly
             if (Math.abs(normalizedX - currentX) > 0.1 || Math.abs(normalizedY - currentY) > 0.1) {

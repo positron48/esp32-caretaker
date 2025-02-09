@@ -29,11 +29,11 @@ void TaskHttpServer(void* parameter) {
         int pwmValue = 0;
         
         if (state == "off") {
-            pwmValue = 0;
+            pwmValue = LED_BRIGHT_OFF;
         } else if (state == "mid") {
-            pwmValue = (4095 * 10) / 100; // 1% яркости как в TaskBlink
+            pwmValue = LED_BRIGHT_MID;
         } else if (state == "high") {
-            pwmValue = 4095; // Полная яркость
+            pwmValue = LED_BRIGHT_HIGH;
         }
         
         ledcWrite(LED_CHANNEL, pwmValue);
