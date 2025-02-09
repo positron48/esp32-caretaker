@@ -29,7 +29,7 @@
 
 // Константы для led
 #define LED_PIN 4
-#define LED_CHANNEL 0 // Канал LEDC (0-15)
+#define LED_CHANNEL 1 // Канал LEDC (0-15)
 #define LED_RESOLUTION 12 // Разрешение (1-14 бит)
 #define LED_FREQUENCY 10000 // Частота PWM в Гц
 

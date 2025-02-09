@@ -1,6 +1,8 @@
 #include "http_server_task.h"
 #include "stream_task.h"
 #include "SPIFFS.h"
+#include "motor_control.h"
+#include "ArduinoJson.h"
 
 void TaskHttpServer(void* parameter) {
     // Initialize SPIFFS
@@ -8,6 +10,9 @@ void TaskHttpServer(void* parameter) {
         Serial.println("An error has occurred while mounting SPIFFS");
         return;
     }
+
+    // Initialize motors
+    initMotors();
 
     WebServer server(80);
 
@@ -61,8 +66,25 @@ void TaskHttpServer(void* parameter) {
 
     // Control endpoint for joystick
     server.on("/control", HTTP_POST, [&server]() {
-        // В будущем здесь будет обработка данных джойстика
-        server.send(200, "text/plain", "OK");
+        StaticJsonDocument<200> doc;
+        if (server.hasArg("plain")) {
+            DeserializationError error = deserializeJson(doc, server.arg("plain"));
+            
+            if (error) {
+                server.send(400, "text/plain", "Invalid JSON");
+                return;
+            }
+
+            float x = doc["x"] | 0.0f;
+            float y = doc["y"] | 0.0f;
+
+            // Process joystick data
+            processJoystickControl(x, y);
+            
+            server.send(200, "text/plain", "OK");
+        } else {
+            server.send(400, "text/plain", "No data received");
+        }
     });
 
     setupStreamTask(&server);
