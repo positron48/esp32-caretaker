@@ -7,6 +7,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="HandheldFriendly" content="true">
     <title>ESP32-CAM RC Control</title>
     <style>
         :root {
@@ -21,8 +23,14 @@
             margin: 0;
             padding: 0;
             -webkit-tap-highlight-color: transparent;
-            touch-action: none;
-            -ms-touch-action: none;
+            touch-action: none !important;
+            -ms-touch-action: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-overflow-scrolling: none !important;
         }
 
         body { 
@@ -31,13 +39,12 @@
             min-height: 100vh;
             overflow: hidden;
             color: var(--text-color);
-            touch-action: none;
-            -ms-touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+            touch-action: none !important;
+            -ms-touch-action: none !important;
+            overscroll-behavior: none !important;
+            position: fixed;
+            width: 100%;
+            height: 100%;
         }
 
         .container {
@@ -648,77 +655,86 @@
             }
         }
 
-        function resetSlider(thumb) {
-            thumb.style.top = '50%';
-            if (!isJoystickMode) {
-                const data = {
-                    mode: 'sliders',
-                    left: thumb === leftThumb ? 0 : leftValue(),
-                    right: thumb === rightThumb ? 0 : rightValue()
-                };
-                // Force send reset immediately
-                sendSliderData(data, true);
-            }
-        }
-
         function startDragging(e, thumb) {
-            const touch = e.touches ? e.touches[0] : e;
-            const touchId = e.touches ? touch.identifier : 'mouse';
+            e.preventDefault();
+            e.stopPropagation();
             
-            activeTouches.set(touchId, {
-                thumb: thumb,
-                startY: touch.clientY || touch.pageY,
-                rect: thumb.parentElement.getBoundingClientRect(),
-                thumbRect: thumb.getBoundingClientRect()
-            });
+            // Обрабатываем все новые касания
+            if (e.touches) {
+                Array.from(e.changedTouches).forEach(touch => {
+                    const rect = thumb.parentElement.getBoundingClientRect();
+                    activeTouches.set(touch.identifier, {
+                        thumb: thumb,
+                        startY: touch.clientY,
+                        rect: rect,
+                        startTop: (parseFloat(thumb.style.top) || 50) / 100 * rect.height
+                    });
+                });
+            } else {
+                activeTouches.set('mouse', {
+                    thumb: thumb,
+                    startY: e.clientY,
+                    rect: thumb.parentElement.getBoundingClientRect(),
+                    startTop: (parseFloat(thumb.style.top) || 50) / 100 * thumb.parentElement.getBoundingClientRect().height
+                });
+            }
         }
 
         function handleDragging(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Обработка всех активных касаний
             if (e.touches) {
-                // Обработка всех активных тачей
                 Array.from(e.touches).forEach(touch => {
                     const touchData = activeTouches.get(touch.identifier);
                     if (touchData) {
-                        updateThumbPosition(touch, touchData.thumb);
+                        updateThumbPosition(touch.clientY, touchData);
                     }
                 });
             } else if (activeTouches.has('mouse')) {
-                // Обработка мыши
                 const touchData = activeTouches.get('mouse');
-                updateThumbPosition(e, touchData.thumb);
+                updateThumbPosition(e.clientY, touchData);
             }
         }
 
-        function updateThumbPosition(e, thumb) {
-            const parentRect = thumb.parentElement.getBoundingClientRect();
-            const currentY = e.clientY || e.pageY;
+        function updateThumbPosition(clientY, touchData) {
+            const { thumb, startY, rect, startTop } = touchData;
+            const deltaY = clientY - startY;
             
+            // Вычисляем новую позицию
+            let newTop = startTop + deltaY;
+            
+            // Ограничиваем движение
             const thumbSize = thumb.offsetHeight;
             const minTop = thumbSize / 2;
-            const maxTop = parentRect.height - thumbSize / 2;
+            const maxTop = rect.height - thumbSize / 2;
+            newTop = Math.max(minTop, Math.min(maxTop, newTop));
             
-            let newTopPixels = currentY - parentRect.top;
-            newTopPixels = Math.max(minTop, Math.min(maxTop, newTopPixels));
+            // Обновляем позицию в процентах
+            thumb.style.top = (newTop / rect.height * 100) + '%';
             
-            thumb.style.top = (newTopPixels / parentRect.height * 100) + '%';
-
-            const normalizedPosition = (newTopPixels - minTop) / (maxTop - minTop);
+            // Вычисляем значение для отправки
+            const normalizedPosition = (newTop - minTop) / (maxTop - minTop);
             const value = -(normalizedPosition * 2 - 1);
             
+            // Отправляем данные
             const data = {
                 mode: 'sliders',
                 left: thumb === leftThumb ? value : leftValue(),
                 right: thumb === rightThumb ? value : rightValue()
             };
-
+            
             sendSliderData(data);
         }
 
         function stopDragging(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
             let releasedThumbs = new Set();
-
-            if (e.touches) {
-                // Собираем слайдеры, которые были отпущены
+            
+            if (e.changedTouches) {
                 Array.from(e.changedTouches).forEach(touch => {
                     const touchData = activeTouches.get(touch.identifier);
                     if (touchData) {
@@ -733,13 +749,13 @@
                     activeTouches.delete('mouse');
                 }
             }
-
+            
             // Сбрасываем позиции отпущенных слайдеров
             releasedThumbs.forEach(thumb => {
                 thumb.style.top = '50%';
             });
-
-            // Отправляем последнюю позицию с учетом сброшенных слайдеров
+            
+            // Отправляем последнюю позицию
             if (activeTouches.size === 0) {
                 const data = {
                     mode: 'sliders',
@@ -753,43 +769,18 @@
         function initSliders() {
             [leftThumb, rightThumb].forEach(thumb => {
                 // Mouse events
-                thumb.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    startDragging(e, thumb);
-                });
+                thumb.addEventListener('mousedown', (e) => startDragging(e, thumb));
                 
-                // Touch events
-                thumb.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    startDragging(e, thumb);
-                }, { passive: false });
+                // Touch events with passive: false
+                thumb.addEventListener('touchstart', (e) => startDragging(e, thumb), { passive: false });
             });
 
-            document.addEventListener('mousemove', (e) => {
-                e.preventDefault();
-                handleDragging(e);
-            });
-            
-            document.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                handleDragging(e);
-            }, { passive: false });
-
-            document.addEventListener('mouseup', (e) => {
-                e.preventDefault();
-                stopDragging(e);
-            });
-            
-            document.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                stopDragging(e);
-            }, { passive: false });
-            
-            document.addEventListener('touchcancel', (e) => {
-                e.preventDefault();
-                stopDragging(e);
-            }, { passive: false });
+            // Global events
+            document.addEventListener('mousemove', handleDragging);
+            document.addEventListener('touchmove', handleDragging, { passive: false });
+            document.addEventListener('mouseup', stopDragging);
+            document.addEventListener('touchend', stopDragging, { passive: false });
+            document.addEventListener('touchcancel', stopDragging, { passive: false });
         }
 
         function leftValue() {
