@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
     <title>ESP32-CAM RC Control</title>
     <style>
         :root {
@@ -16,6 +16,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body { 
@@ -24,10 +25,7 @@
             min-height: 100vh;
             overflow: hidden;
             color: var(--text-color);
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
+            touch-action: none;
         }
 
         .container {
@@ -37,6 +35,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            touch-action: none;
         }
 
         .video-container {
@@ -138,10 +137,13 @@
             white-space: nowrap;
             min-width: 80px;
             text-align: center;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        .button:hover {
-            background: rgba(255, 255, 255, 0.2);
+        .button:active {
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .button.active {
@@ -196,9 +198,9 @@
         
         <div class="controls-overlay">
             <div class="controls-top">
-                <button class="button" onclick="toggleStream()" id="stream-toggle">Start Stream</button>
-                <button class="button" id="quality-button" onclick="toggleQuality()">SD</button>
-                <button class="button led-off" id="led-button" onclick="toggleLED()">LED Off</button>
+                <button class="button" id="stream-toggle">Start Stream</button>
+                <button class="button" id="quality-button">SD</button>
+                <button class="button led-off" id="led-button">LED Off</button>
             </div>
             
             <div class="controls-right">
@@ -331,30 +333,24 @@
             const centerY = rect.height / 2;
             
             // Get touch or mouse position
-            const clientX = event.type.includes('mouse') ? event.clientX : event.touches[0].clientX;
-            const clientY = event.type.includes('mouse') ? event.clientY : event.touches[0].clientY;
+            const clientX = event.clientX || event.touches[0].clientX;
+            const clientY = event.clientY || event.touches[0].clientY;
 
             // Calculate relative position from center
             let x = clientX - rect.left - centerX;
             let y = clientY - rect.top - centerY;
 
-            // Calculate distance from center
-            const distance = Math.sqrt(x * x + y * y);
-            const maxRadius = rect.width / 2 - stick.offsetWidth / 2;
-
-            // If distance is greater than max radius, normalize the coordinates
-            if (distance > maxRadius) {
-                const angle = Math.atan2(y, x);
-                x = Math.cos(angle) * maxRadius;
-                y = Math.sin(angle) * maxRadius;
-            }
+            // Limit to square boundary
+            const maxOffset = rect.width / 2 - stick.offsetWidth / 2;
+            x = Math.max(-maxOffset, Math.min(maxOffset, x));
+            y = Math.max(-maxOffset, Math.min(maxOffset, y));
 
             // Update stick position
             stick.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
 
             // Calculate normalized values (-1 to 1)
-            const normalizedX = x / maxRadius;
-            const normalizedY = -y / maxRadius; // Invert Y for traditional control scheme
+            const normalizedX = x / maxOffset;
+            const normalizedY = -y / maxOffset; // Invert Y for traditional control scheme
 
             // Only send if values changed significantly
             if (Math.abs(normalizedX - currentX) > 0.1 || Math.abs(normalizedY - currentY) > 0.1) {
@@ -384,7 +380,7 @@
             });
         }
 
-        // Mouse events
+        // Mouse events for joystick
         stick.addEventListener('mousedown', (e) => {
             e.preventDefault();
             isDragging = true;
@@ -400,21 +396,55 @@
             resetJoystick();
         });
 
-        // Touch events
+        // Touch events for joystick
         stick.addEventListener('touchstart', (e) => {
             e.preventDefault();
             isDragging = true;
-        });
+            handleJoystickMove(e.touches[0]);
+        }, { passive: false });
         
         document.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            handleJoystickMove(e);
-        });
+            if (isDragging && e.touches.length > 0) {
+                handleJoystickMove(e.touches[0]);
+            }
+        }, { passive: false });
         
         document.addEventListener('touchend', (e) => {
             e.preventDefault();
             resetJoystick();
+        }, { passive: false });
+
+        document.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            resetJoystick();
+        }, { passive: false });
+
+        // Обработчики для кнопок (только один способ обработки)
+        streamToggle.addEventListener('click', toggleStream);
+        qualityButton.addEventListener('click', toggleQuality);
+        ledButton.addEventListener('click', toggleLED);
+
+        // Добавляем обработку тач-событий для кнопок
+        [streamToggle, qualityButton, ledButton].forEach(button => {
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                button.click(); // Эмулируем обычный клик
+            }, { passive: false });
         });
+
+        // Предотвращаем скролл/зум на мобильных устройствах
+        document.addEventListener('gesturestart', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('gesturechange', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('gestureend', (e) => {
+            e.preventDefault();
+        }, { passive: false });
     </script>
 </body>
 </html> 
