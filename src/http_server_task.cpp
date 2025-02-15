@@ -3,6 +3,7 @@
 #include "SPIFFS.h"
 #include "motor_control.h"
 #include "ArduinoJson.h"
+#include "html_content.h"
 
 void TaskHttpServer(void* parameter) {
     // Initialize SPIFFS
@@ -18,14 +19,7 @@ void TaskHttpServer(void* parameter) {
 
     // Setup routes
     server.on("/", HTTP_GET, [&server]() {
-        if(SPIFFS.exists("/html/index.html")) {
-            File file = SPIFFS.open("/html/index.html", "r");
-            server.streamFile(file, "text/html");
-            file.close();
-        } else {
-            server.send(404, "text/plain", "File not found");
-            Serial.println("index.html not found in SPIFFS");
-        }
+        server.send(200, "text/html", INDEX_HTML);
     });
 
     // LED control endpoint

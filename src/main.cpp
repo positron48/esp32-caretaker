@@ -6,6 +6,7 @@
 #include "camera_config.h"
 #include <esp_camera.h>
 #include "SPIFFS.h"
+#include <ArduinoOTA.h>
 
 // LED pin
 const int ledPin = LED_PIN;
@@ -57,6 +58,29 @@ bool initCamera() {
     return true;
 }
 
+void initOTA() {
+    ArduinoOTA.setHostname("esp32cam");
+    ArduinoOTA.onStart([]() {
+        Serial.println("Start OTA update");
+    });
+    ArduinoOTA.onEnd([]() {
+        Serial.println("\nOTA update finished");
+    });
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+        Serial.printf("OTA Progress: %u%%\r", (progress * 100) / total);
+    });
+    ArduinoOTA.onError([](ota_error_t error) {
+        Serial.printf("Error[%u] during OTA update: ", error);
+        if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+        else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+        else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+        else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+        else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    });
+    ArduinoOTA.begin();
+    Serial.println("OTA is ready");
+}
+
 void setup() {
     Serial.begin(115200);
     Serial.println("ESP32-CAM Streaming Server");
@@ -87,6 +111,9 @@ void setup() {
     // Initialize WiFi
     initWiFi();
 
+    // Initialize OTA updates
+    initOTA();
+
     // Create log task on core 1
     xTaskCreatePinnedToCore(
         TaskLog,
@@ -111,7 +138,8 @@ void setup() {
 }
 
 void loop() {
+    ArduinoOTA.handle();
     // Check WiFi connection every 5 seconds
-    ensureWiFiConnection();
-    delay(5000);
+    // ensureWiFiConnection();
+    // delay(500);
 } 

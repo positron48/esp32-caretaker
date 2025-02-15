@@ -1,3 +1,6 @@
+#pragma once
+
+const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
@@ -827,4 +830,4 @@
         initSliders();
     </script>
 </body>
-</html> 
+</html> )rawliteral";
