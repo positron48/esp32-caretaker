@@ -3,10 +3,10 @@
 #include <Arduino.h>
 
 // L298N pins
-#define MOTOR_LEFT_IN1 14
-#define MOTOR_LEFT_IN2 15
-#define MOTOR_RIGHT_IN1 13
-#define MOTOR_RIGHT_IN2 12
+#define MOTOR_LEFT_IN1 12 //in1
+#define MOTOR_LEFT_IN2 13 //in2
+#define MOTOR_RIGHT_IN1 15 //in3
+#define MOTOR_RIGHT_IN2 14 //in4
 
 // PWM configuration
 #define MOTOR_PWM_CHANNEL_LEFT1 2  // PWM channel for left motor IN1
