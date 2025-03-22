@@ -28,9 +28,13 @@ enum class ControlMode {
     SLIDERS
 };
 
+// Глобальная переменная для хранения текущего режима управления
+extern ControlMode currentControlMode;
+
 // Motor control functions
 void initMotors();
 void setMotorSpeed(int pwmLeft, int pwmRight);
 void processJoystickControl(float x, float y);
+void processJoystickControlWithValues(float x, float y, int* leftMotor, int* rightMotor);
 void processSlidersControl(float leftSlider, float rightSlider);
 void stopMotors(); 

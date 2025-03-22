@@ -286,6 +286,24 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         .status.success {
             background: rgba(76, 175, 80, 0.8);
         }
+
+        .bt-status {
+            display: none;
+            color: #fff;
+            font-size: 14px;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        
+        .bt-status.active {
+            display: block;
+        }
+        
+        .bt-active {
+            background: rgba(76, 175, 80, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -300,9 +318,11 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         <div class="controls-overlay">
             <div class="controls-top">
                 <button class="button" id="stream-toggle">Start Stream</button>
-                <button class="button" id="quality-button">SD</button>
+                <button class="button" id="quality-toggle">Quality: SD</button>
                 <button class="button led-off" id="led-button">LED Off</button>
                 <button class="button active" id="control-mode">Joystick</button>
+                <button class="button" id="bt-toggle">Bluetooth</button>
+                <span class="bt-status">Bluetooth: Выключен</span>
             </div>
 
             <div class="control-mode-switch">
@@ -335,7 +355,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         const statusDiv = document.getElementById('status');
         const streamPlaceholder = document.getElementById('stream-placeholder');
         const streamToggle = document.getElementById('stream-toggle');
-        const qualityButton = document.getElementById('quality-button');
+        const qualityButton = document.getElementById('quality-toggle');
         const ledButton = document.getElementById('led-button');
         const controlMode = document.getElementById('control-mode');
         const joystickControl = document.getElementById('joystick-control');
@@ -345,6 +365,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         const joystick = document.getElementById('joystick');
         const stick = document.getElementById('stick');
         const fullscreenButton = document.getElementById('fullscreen-button');
+        const btStatus = document.querySelector('.bt-status');
 
         let isStoppingStream = false;
         let isStreaming = false;
@@ -364,6 +385,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         let activeTouches = new Map(); // Хранит активные тачи для каждого слайдера
 
         const THROTTLE_MS = 400; // Common throttle time for both joystick and sliders
+
+        let btPollingInterval = 2000; // 2 секунды по умолчанию
+        let btConnected = false; // Флаг состояния подключения
+        let isBtActive = false;  // Флаг активности Bluetooth
 
         function showStatus(message, isError = false) {
             statusDiv.textContent = message;
@@ -424,7 +449,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         function toggleQuality() {
             isHD = !isHD;
             const quality = isHD ? 'HD' : 'SD';
-            qualityButton.textContent = quality;
+            qualityButton.textContent = 'Quality: ' + quality;
             qualityButton.classList.toggle('active', isHD);
             
             fetch('/quality?mode=' + quality)
@@ -458,6 +483,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
         // Joystick control
         function sendJoystickData(x, y, force = false) {
+            // Не отправляем, если BT активен
+            if (isBtActive) return;
+            
             const now = Date.now();
             
             // Clear any pending timeout
@@ -528,13 +556,13 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             }
         }
 
-        function resetJoystick() {
+        function resetJoystick(sendData = false) {
             isDragging = false;
             stick.style.transform = 'translate(-50%, -50%)';
             currentX = 0;
             currentY = 0;
-            // Only send reset position in joystick mode
-            if (isJoystickMode) {
+            // Отправляем данные только если это явно запрошено
+            if (sendData && isJoystickMode && !isBtActive) {
                 sendJoystickData(0, 0, true);
             }
         }
@@ -552,7 +580,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         
         document.addEventListener('mouseup', (e) => {
             e.preventDefault();
-            resetJoystick();
+            resetJoystick(true);
         });
 
         // Touch events for joystick
@@ -571,39 +599,81 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         
         document.addEventListener('touchend', (e) => {
             e.preventDefault();
-            resetJoystick();
+            resetJoystick(true);
         }, { passive: false });
 
         document.addEventListener('touchcancel', (e) => {
             e.preventDefault();
-            resetJoystick();
+            resetJoystick(true);
         }, { passive: false });
 
         // Обработчики для кнопок (только один способ обработки)
         streamToggle.addEventListener('click', toggleStream);
         qualityButton.addEventListener('click', toggleQuality);
         ledButton.addEventListener('click', toggleLED);
+        
+        // Обработчик кнопки режима управления
         controlMode.addEventListener('click', () => {
+            // Меняем режим
             isJoystickMode = !isJoystickMode;
+            const mode = isJoystickMode ? 'joystick' : 'sliders';
+            
+            // Обновляем текст на кнопке
             controlMode.textContent = isJoystickMode ? 'Joystick' : 'Sliders';
             
+            // Обновляем классы активности контейнеров
             if (isJoystickMode) {
                 joystickControl.classList.add('active');
                 slidersControl.classList.remove('active');
-                // Send initial joystick position
-                sendJoystickData(0, 0, true);
             } else {
                 joystickControl.classList.remove('active');
                 slidersControl.classList.add('active');
-                // Reset sliders visually and send initial position
+            }
+            
+            // Управляем отображением элементов управления напрямую
+            const joystickContainer = document.querySelector('.joystick-container');
+            const slidersContainer = document.querySelector('.sliders-container');
+            
+            if (isBtActive) {
+                // Если BT активен, скрываем все элементы управления
+                if (joystickContainer) joystickContainer.style.display = 'none';
+                if (slidersContainer) slidersContainer.style.display = 'none';
+            } else {
+                // Иначе показываем соответствующие элементы
+                if (isJoystickMode) {
+                    if (joystickContainer) joystickContainer.style.display = 'block';
+                    if (slidersContainer) slidersContainer.style.display = 'none';
+                } else {
+                    if (joystickContainer) joystickContainer.style.display = 'none';
+                    if (slidersContainer) slidersContainer.style.display = 'block';
+                }
+            }
+            
+            // Сбрасываем визуальные элементы БЕЗ отправки запросов
+            if (isJoystickMode) {
+                // Сбрасываем джойстик без отправки данных
+                isDragging = false;
+                stick.style.transform = 'translate(-50%, -50%)';
+                currentX = 0;
+                currentY = 0;
+            } else {
+                // Сбрасываем слайдеры без отправки данных
                 leftThumb.style.top = '50%';
                 rightThumb.style.top = '50%';
-                sendSliderData({
-                    mode: 'sliders',
-                    left: 0,
-                    right: 0
-                }, true);
             }
+            
+            // Отправляем ТОЛЬКО ОДИН запрос на переключение режима
+            fetch('/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode })
+            }).then(response => {
+                if (isBtActive && response.ok) {
+                    setTimeout(checkBluetoothStatus, 500);
+                }
+            }).catch(error => {
+                console.error('Failed to change control mode:', error);
+            });
         });
 
         // Добавляем обработку тач-событий для кнопок
@@ -629,6 +699,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
         // Sliders control
         function sendSliderData(data, force = false) {
+            // Не отправляем, если BT активен
+            if (isBtActive) return;
+            
             const now = Date.now();
             
             // Clear any pending timeout
@@ -825,9 +898,174 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             toggleFullscreen();
         }, { passive: false });
 
-        // Initialize controls
-        resetJoystick();
+        // Initialize controls - не отправляем запрос при инициализации
+        resetJoystick(false);
         initSliders();
+
+        // Назначаем обработчик для кнопки включения/выключения Bluetooth
+        document.getElementById('bt-toggle').addEventListener('click', toggleBluetooth);
+        
+        // Запускаем периодический опрос статуса Bluetooth
+        checkBluetoothStatus();
+
+        function checkBluetoothStatus() {
+            fetch('/bt/status')
+                .then(response => response.text())
+                .then(status => {
+                    const btStatusElement = document.getElementById('bt-status');
+                    btStatusElement.textContent = status;
+                    
+                    // Проверяем статус подключения
+                    const isConnected = status.includes("Готов к работе");
+                    
+                    // Если статус изменился
+                    if (isConnected !== btConnected) {
+                        btConnected = isConnected;
+                        
+                        // Изменяем интервал опроса в зависимости от статуса подключения
+                        btPollingInterval = btConnected ? 5000 : 2000; // 5 секунд если подключено, 2 секунды если нет
+                    }
+                    
+                    if (status.includes("Готов к работе")) {
+                        btStatusElement.classList.remove('status-disconnected');
+                        btStatusElement.classList.add('status-connected');
+                        document.getElementById('bt-toggle').classList.add('active');
+                        isBtActive = true;
+                        
+                        // Скрываем элементы управления напрямую
+                        const joystickContainer = document.querySelector('.joystick-container');
+                        const slidersContainer = document.querySelector('.sliders-container');
+                        if (joystickContainer) joystickContainer.style.display = 'none';
+                        if (slidersContainer) slidersContainer.style.display = 'none';
+                        document.getElementById('control-mode').classList.add('active');
+                    } else if (status.includes("Поиск")) {
+                        btStatusElement.classList.remove('status-connected');
+                        btStatusElement.classList.add('status-disconnected');
+                        document.getElementById('bt-toggle').classList.add('active');
+                        isBtActive = true;
+                        
+                        // Скрываем элементы управления напрямую
+                        const joystickContainer = document.querySelector('.joystick-container');
+                        const slidersContainer = document.querySelector('.sliders-container');
+                        if (joystickContainer) joystickContainer.style.display = 'none';
+                        if (slidersContainer) slidersContainer.style.display = 'none';
+                        document.getElementById('control-mode').classList.add('active');
+                    } else {
+                        btStatusElement.classList.remove('status-connected');
+                        btStatusElement.classList.add('status-disconnected');
+                        document.getElementById('bt-toggle').classList.remove('active');
+                        isBtActive = false;
+                        
+                        // Показываем соответствующие элементы управления напрямую
+                        const joystickContainer = document.querySelector('.joystick-container');
+                        const slidersContainer = document.querySelector('.sliders-container');
+                        const controlMode = document.getElementById('control-mode');
+                        
+                        controlMode.textContent = isJoystickMode ? 'Joystick' : 'Sliders';
+                        
+                        if (isJoystickMode) {
+                            if (joystickContainer) joystickContainer.style.display = 'block';
+                            if (slidersContainer) slidersContainer.style.display = 'none';
+                            joystickControl.classList.add('active');
+                            slidersControl.classList.remove('active');
+                        } else {
+                            if (joystickContainer) joystickContainer.style.display = 'none';
+                            if (slidersContainer) slidersContainer.style.display = 'block';
+                            joystickControl.classList.remove('active');
+                            slidersControl.classList.add('active');
+                        }
+                    }
+                    
+                    updateButtonUI();
+                })
+                .catch(error => {
+                    console.error('Ошибка при получении статуса Bluetooth:', error);
+                })
+                .finally(() => {
+                    // Устанавливаем следующий опрос с текущим интервалом
+                    setTimeout(checkBluetoothStatus, btPollingInterval);
+                });
+        }
+
+        // Функция для переключения Bluetooth
+        function toggleBluetooth() {
+            // Определяем текущий режим управления
+            const currentMode = isJoystickMode ? 'joystick' : 'sliders';
+            const action = isBtActive ? 'off' : 'on';
+            
+            fetch(`/bt?state=${action}&mode=${currentMode}`)
+                .then(response => {
+                    if (response.ok) {
+                        // Устанавливаем новое состояние BT
+                        isBtActive = !isBtActive;
+                        
+                        // Непосредственно обновляем UI элементов
+                        if (isBtActive) {
+                            // Скрываем элементы управления сразу при включении BT
+                            const joystickContainer = document.querySelector('.joystick-container');
+                            const slidersContainer = document.querySelector('.sliders-container');
+                            
+                            if (joystickContainer) joystickContainer.style.display = 'none';
+                            if (slidersContainer) slidersContainer.style.display = 'none';
+                            
+                            document.getElementById('control-mode').classList.add('active');
+                        } else {
+                            // Показываем соответствующие элементы управления при выключении BT
+                            const joystickContainer = document.querySelector('.joystick-container');
+                            const slidersContainer = document.querySelector('.sliders-container');
+                            const controlMode = document.getElementById('control-mode');
+                            
+                            controlMode.textContent = isJoystickMode ? 'Joystick' : 'Sliders';
+                            
+                            if (isJoystickMode) {
+                                if (joystickContainer) joystickContainer.style.display = 'block';
+                                if (slidersContainer) slidersContainer.style.display = 'none';
+                                joystickControl.classList.add('active');
+                                slidersControl.classList.remove('active');
+                            } else {
+                                if (joystickContainer) joystickContainer.style.display = 'none';
+                                if (slidersContainer) slidersContainer.style.display = 'block';
+                                joystickControl.classList.remove('active');
+                                slidersControl.classList.add('active');
+                            }
+                        }
+                        
+                        // Обновляем кнопку BT
+                        updateButtonUI();
+                        
+                        // После включения/выключения сразу проверяем статус
+                        setTimeout(checkBluetoothStatus, 500);
+                    }
+                })
+                .catch(error => {
+                    console.error(`Ошибка при ${action === 'on' ? 'включении' : 'выключении'} Bluetooth:`, error);
+                });
+        }
+
+        // Обновление UI кнопок в зависимости от состояния Bluetooth
+        function updateButtonUI() {
+            const btToggle = document.getElementById('bt-toggle');
+            const btStatus = document.getElementById('bt-status');
+            
+            if (isBtActive) {
+                btToggle.classList.add('active');
+                btToggle.textContent = 'Выключить BT';
+                btStatus.classList.add('active');
+            } else {
+                btToggle.classList.remove('active');
+                btToggle.textContent = 'Включить BT';
+                btStatus.classList.remove('active');
+                btStatus.textContent = 'Bluetooth: Выключен';
+            }
+        }
+
+        // Функция для сброса слайдеров без отправки данных
+        function resetSlidersVisual() {
+            const leftThumb = document.getElementById('left-thumb');
+            const rightThumb = document.getElementById('right-thumb');
+            leftThumb.style.top = '50%';
+            rightThumb.style.top = '50%';
+        }
     </script>
 </body>
 </html> )rawliteral";
