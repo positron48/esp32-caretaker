@@ -12,7 +12,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     <meta name="format-detection" content="telephone=no">
     <meta name="msapplication-tap-highlight" content="no">
     <meta name="HandheldFriendly" content="true">
-    <title>ESP32-CAM caretaker</title>
+    <title>ESP32-CAM caretaker!</title>
     <style>
         :root {
             --primary-color: #4CAF50;
@@ -1068,4 +1068,4 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
     </script>
 </body>
-</html> )rawliteral";
+</html>)rawliteral";
