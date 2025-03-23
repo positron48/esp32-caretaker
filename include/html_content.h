@@ -296,14 +296,47 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             display: none;
             color: #fff;
             font-size: 14px;
-            padding: 4px 8px;
+            padding: 8px 12px;
             background: rgba(0, 0, 0, 0.5);
             border-radius: 4px;
-            margin-left: 10px;
+            margin-top: 10px;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .bt-status.active {
             display: block;
+        }
+        
+        .bt-status.status-connected {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: rgba(76, 175, 80, 0.4);
+        }
+        
+        .bt-status.status-disconnected {
+            background: rgba(244, 67, 54, 0.1);
+            border-color: rgba(244, 67, 54, 0.3);
+        }
+
+        .bt-status.status-scanning {
+            background: rgba(255, 152, 0, 0.2);
+            border-color: rgba(255, 152, 0, 0.4);
+        }
+        
+        .settings-section .button {
+            width: 100%;
+            margin-bottom: 5px;
+            justify-content: center;
+            padding: 10px;
+            font-weight: 500;
         }
         
         .bt-active {
@@ -544,11 +577,19 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             
             <div class="settings-section">
                 <select id="resolution-select" class="settings-select">
+                    <option value="QQVGA">QQVGA (160x120)</option>
+                    <option value="QCIF">QCIF (176x144)</option>
+                    <option value="HQVGA">HQVGA (240x176)</option>
+                    <option value="240X240">240X240 (240x240)</option>
                     <option value="QVGA">QVGA (320x240)</option>
+                    <option value="CIF">CIF (400x296)</option>
+                    <option value="HVGA">HVGA (480x320)</option>
                     <option value="VGA">VGA (640x480)</option>
                     <option value="SVGA">SVGA (800x600)</option>
                     <option value="XGA">XGA (1024x768)</option>
+                    <option value="HD">HD (1280x720)</option>
                     <option value="SXGA">SXGA (1280x1024)</option>
+                    <option value="UXGA">UXGA (1600x1200)</option>
                 </select>
             </div>
             
@@ -567,7 +608,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             </div>
             
             <div class="settings-section">
-                <button class="button" id="bt-toggle">Bluetooth</button>
+                <button class="button" id="bt-toggle">
+                    <span class="material-icons" style="margin-right: 5px; font-size: 18px;">bluetooth</span>
+                    <span>Bluetooth</span>
+                </button>
                 <div class="bt-status">Bluetooth: Выключен</div>
             </div>
             
@@ -1108,11 +1152,22 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                         btPollingInterval = btConnected ? 5000 : 2000; // 5 секунд если подключено, 2 секунды если нет
                     }
                     
-                    if (data.enabled) {
-                        btStatusElement.classList.remove('status-disconnected');
+                    // Сначала удаляем все возможные классы статусов
+                    btStatusElement.classList.remove('status-connected', 'status-disconnected', 'status-scanning');
+                    
+                    // Определяем текущий статус и устанавливаем соответствующий класс
+                    if (data.status.includes('Сканирование') || data.status.includes('Поиск')) {
+                        btStatusElement.classList.add('status-scanning');
+                    } else if (data.connected) {
                         btStatusElement.classList.add('status-connected');
+                    } else {
+                        btStatusElement.classList.add('status-disconnected');
+                    }
+                    
+                    if (data.enabled) {
                         btToggle.classList.add('active');
                         isBtActive = true;
+                        btStatusElement.classList.add('active');
                         
                         // Скрываем элементы управления напрямую
                         const joystickContainer = document.querySelector('.joystick-container');
@@ -1120,16 +1175,15 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                         if (joystickContainer) joystickContainer.style.display = 'none';
                         if (slidersContainer) slidersContainer.style.display = 'none';
                         
-                        // Показываем обе вкладки как активные при активном BT
-                        joystickTab.classList.add('active');
-                        slidersTab.classList.add('active');
+                        // Обновляем состояние вкладок в соответствии с текущим активным режимом
+                        joystickTab.classList.toggle('active', isJoystickMode);
+                        slidersTab.classList.toggle('active', !isJoystickMode);
                     } else {
-                        btStatusElement.classList.remove('status-connected');
-                        btStatusElement.classList.add('status-disconnected');
                         btToggle.classList.remove('active');
                         isBtActive = false;
+                        btStatusElement.classList.remove('active');
                         
-                        // Обновляем выбранную вкладку
+                        // Обновляем состояние вкладок в соответствии с текущим активным режимом
                         joystickTab.classList.toggle('active', isJoystickMode);
                         slidersTab.classList.toggle('active', !isJoystickMode);
                         
@@ -1182,14 +1236,13 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
                             if (joystickContainer) joystickContainer.style.display = 'none';
                             if (slidersContainer) slidersContainer.style.display = 'none';
                             
-                            document.getElementById('control-mode').classList.add('active');
+                            // Удаляем обращение к несуществующему элементу
                         } else {
                             // Показываем соответствующие элементы управления при выключении BT
                             const joystickContainer = document.querySelector('.joystick-container');
                             const slidersContainer = document.querySelector('.sliders-container');
-                            const controlMode = document.getElementById('control-mode');
                             
-                            controlMode.textContent = isJoystickMode ? 'Joystick' : 'Sliders';
+                            // Удаляем обращение к несуществующему элементу и связанный с ним код
                             
                             if (isJoystickMode) {
                                 if (joystickContainer) joystickContainer.style.display = 'block';
@@ -1218,15 +1271,24 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
         // Обновление UI кнопок в зависимости от состояния Bluetooth
         function updateButtonUI() {
+            const btnIcon = btToggle.querySelector('.material-icons');
+            const btnText = btToggle.querySelector('span:last-child');
+            
             if (isBtActive) {
                 btToggle.classList.add('active');
-                btToggle.textContent = 'Выключить BT';
+                btnText.textContent = 'Выключить BT';
+                btnIcon.textContent = 'bluetooth_connected';
                 btStatus.classList.add('active');
             } else {
                 btToggle.classList.remove('active');
-                btToggle.textContent = 'Включить BT';
+                btnText.textContent = 'Включить BT';
+                btnIcon.textContent = 'bluetooth';
                 btStatus.classList.remove('active');
                 btStatus.textContent = 'Bluetooth: Выключен';
+                
+                // Удаляем все статусные классы при выключенном Bluetooth
+                btStatus.classList.remove('status-connected', 'status-disconnected', 'status-scanning');
+                btStatus.classList.add('status-disconnected');
             }
         }
 
@@ -1295,15 +1357,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         function sendLedValue(value) {
-            let state = 'off';
-            
-            if (value > 0 && value <= 50) {
-                state = 'mid';
-            } else if (value > 50) {
-                state = 'high';
-            }
-            
-            fetch('/led?state=' + state)
+            // Отправляем числовое значение непосредственно на сервер (0-100)
+            fetch('/led?brightness=' + value)
                 .then(response => response.text())
                 .then(result => {
                     showStatus('LED brightness set to ' + ledValue.textContent);

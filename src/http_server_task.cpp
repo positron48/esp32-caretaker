@@ -25,15 +25,28 @@ void TaskHttpServer(void* parameter) {
 
     // LED control endpoint
     server.on("/led", HTTP_GET, [&server]() {
-        String state = server.arg("state");
         int pwmValue = 0;
         
-        if (state == "off") {
-            pwmValue = LED_BRIGHT_OFF;
-        } else if (state == "mid") {
-            pwmValue = LED_BRIGHT_MID;
-        } else if (state == "high") {
-            pwmValue = LED_BRIGHT_HIGH;
+        // Проверяем, пришел ли параметр brightness для плавного управления
+        if (server.hasArg("brightness")) {
+            // Получаем значение яркости (0-100)
+            int brightness = server.arg("brightness").toInt();
+            
+            // Преобразуем значение яркости в PWM значение (0-4095)
+            // Используем максимум из LED_RESOLUTION (12 бит = 4095)
+            pwmValue = map(brightness, 0, 100, 0, (1 << LED_RESOLUTION) - 1);
+        }
+        // Поддерживаем и старый формат для обратной совместимости
+        else if (server.hasArg("state")) {
+            String state = server.arg("state");
+            
+            if (state == "off") {
+                pwmValue = LED_BRIGHT_OFF;
+            } else if (state == "mid") {
+                pwmValue = LED_BRIGHT_MID;
+            } else if (state == "high") {
+                pwmValue = LED_BRIGHT_HIGH;
+            }
         }
         
         ledcWrite(LED_CHANNEL, pwmValue);
