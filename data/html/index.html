@@ -127,6 +127,8 @@
             padding: 8px;
             border-radius: 8px;
             backdrop-filter: blur(5px);
+            display: flex;
+            gap: 10px;
         }
 
         .control-mode-switch .button {
@@ -230,12 +232,15 @@
             color: var(--text-color);
             transition: all 0.3s;
             white-space: nowrap;
-            min-width: 80px;
+            min-width: 40px;
             text-align: center;
             touch-action: manipulation;
             user-select: none;
             -webkit-user-select: none;
             opacity: 0.7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .button:active {
@@ -301,7 +306,187 @@
         .bt-active {
             background: rgba(76, 175, 80, 0.2);
         }
+
+        /* New styles for settings panel */
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            transition: left 0.3s ease;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .settings-panel.active {
+            left: 0;
+        }
+        
+        .settings-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #fff;
+            opacity: 0.7;
+        }
+        
+        .settings-close:hover {
+            opacity: 1;
+        }
+        
+        .settings-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 10px;
+        }
+        
+        .settings-section {
+            margin-bottom: 25px;
+        }
+        
+        .settings-option {
+            margin-bottom: 20px;
+        }
+        
+        .settings-slider-container {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .settings-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+        
+        .settings-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+        }
+        
+        .settings-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .settings-slider-value {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .settings-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 100%;
+        }
+        
+        .settings-select option {
+            background-color: #333;
+        }
+        
+        /* Control mode tab selector */
+        .control-mode-tabs {
+            display: flex;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .control-mode-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            opacity: 0.7;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .control-mode-tab:first-child {
+            border-radius: 4px 0 0 4px;
+        }
+        
+        .control-mode-tab:last-child {
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .control-mode-tab.active {
+            background: rgba(255, 255, 255, 0.2);
+            opacity: 1;
+        }
+        
+        /* Icon styles */
+        .icon-button {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: block;
+        }
+        
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        
+        .overlay.active {
+            display: block;
+        }
     </style>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
     <div class="container">
@@ -314,16 +499,18 @@
         
         <div class="controls-overlay">
             <div class="controls-top">
-                <button class="button" id="stream-toggle">Start Stream</button>
-                <button class="button" id="quality-toggle">Quality: SD</button>
-                <button class="button led-off" id="led-button">LED Off</button>
-                <button class="button active" id="control-mode">Joystick</button>
-                <button class="button" id="bt-toggle">Bluetooth</button>
-                <span class="bt-status">Bluetooth: Выключен</span>
+                <button class="button icon-button" id="stream-toggle" title="Start/Stop Stream">
+                    <span class="material-icons">play_arrow</span>
+                </button>
+                <button class="button icon-button" id="settings-toggle" title="Settings">
+                    <span class="material-icons">settings</span>
+                </button>
             </div>
 
             <div class="control-mode-switch">
-                <button class="button" id="fullscreen-button">⛶</button>
+                <button class="button icon-button" id="fullscreen-button" title="Fullscreen">
+                    <span class="material-icons">fullscreen</span>
+                </button>
             </div>
             
             <div class="controls-right">
@@ -345,6 +532,49 @@
 
             <div id="status" class="status"></div>
         </div>
+        
+        <!-- Settings Panel -->
+        <div class="overlay" id="settings-overlay"></div>
+        <div class="settings-panel" id="settings-panel">
+            <div class="settings-close" id="settings-close">&times;</div>
+            <div class="settings-title">Settings</div>
+            
+            <div class="settings-section">
+                <select id="resolution-select" class="settings-select">
+                    <option value="QVGA">QVGA (320x240)</option>
+                    <option value="VGA">VGA (640x480)</option>
+                    <option value="SVGA">SVGA (800x600)</option>
+                    <option value="XGA">XGA (1024x768)</option>
+                    <option value="SXGA">SXGA (1280x1024)</option>
+                </select>
+            </div>
+            
+            <div class="settings-section">
+                <div class="settings-slider-container">
+                    <input type="range" min="10" max="64" value="12" class="settings-slider" id="quality-slider">
+                    <div class="settings-slider-value" id="quality-value">12 (Higher quality)</div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <div class="control-mode-tabs">
+                    <div class="control-mode-tab active" data-mode="joystick" id="joystick-tab">Joystick</div>
+                    <div class="control-mode-tab" data-mode="sliders" id="sliders-tab">Sliders</div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <button class="button" id="bt-toggle">Bluetooth</button>
+                <div class="bt-status">Bluetooth: Выключен</div>
+            </div>
+            
+            <div class="settings-section">
+                <div class="settings-slider-container">
+                    <input type="range" min="0" max="100" value="0" class="settings-slider" id="led-slider">
+                    <div class="settings-slider-value" id="led-value">LED: Off</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -352,8 +582,6 @@
         const statusDiv = document.getElementById('status');
         const streamPlaceholder = document.getElementById('stream-placeholder');
         const streamToggle = document.getElementById('stream-toggle');
-        const qualityButton = document.getElementById('quality-toggle');
-        const ledButton = document.getElementById('led-button');
         const controlMode = document.getElementById('control-mode');
         const joystickControl = document.getElementById('joystick-control');
         const slidersControl = document.getElementById('sliders-control');
@@ -363,11 +591,24 @@
         const stick = document.getElementById('stick');
         const fullscreenButton = document.getElementById('fullscreen-button');
         const btStatus = document.querySelector('.bt-status');
+        const ledButton = document.getElementById('led-button');
+        const btToggle = document.getElementById('bt-toggle');
+
+        // Settings panel elements
+        const settingsToggle = document.getElementById('settings-toggle');
+        const settingsPanel = document.getElementById('settings-panel');
+        const settingsClose = document.getElementById('settings-close');
+        const settingsOverlay = document.getElementById('settings-overlay');
+        const resolutionSelect = document.getElementById('resolution-select');
+        const qualitySlider = document.getElementById('quality-slider');
+        const qualityValue = document.getElementById('quality-value');
+        const ledSlider = document.getElementById('led-slider');
+        const ledValue = document.getElementById('led-value');
+        const joystickTab = document.getElementById('joystick-tab');
+        const slidersTab = document.getElementById('sliders-tab');
 
         let isStoppingStream = false;
         let isStreaming = false;
-        let isHD = false;
-        let isLedOn = 0; // 0 - off, 1 - mid, 2 - high
         let isJoystickMode = true;
         let isDragging = false;
         let currentX = 0;
@@ -380,12 +621,52 @@
         let lastSendTime = 0;
         let pendingSend = null;
         let activeTouches = new Map(); // Хранит активные тачи для каждого слайдера
+        let ledBrightness = 0; // 0-100%
 
         const THROTTLE_MS = 400; // Common throttle time for both joystick and sliders
 
         let btPollingInterval = 2000; // 2 секунды по умолчанию
         let btConnected = false; // Флаг состояния подключения
         let isBtActive = false;  // Флаг активности Bluetooth
+
+        // Settings panel toggle
+        function toggleSettingsPanel() {
+            settingsPanel.classList.toggle('active');
+            settingsOverlay.classList.toggle('active');
+        }
+
+        settingsToggle.addEventListener('click', toggleSettingsPanel);
+        settingsClose.addEventListener('click', toggleSettingsPanel);
+        settingsOverlay.addEventListener('click', toggleSettingsPanel);
+
+        // Quality slider handling
+        qualitySlider.addEventListener('input', function() {
+            const value = this.value;
+            qualityValue.textContent = value + (value < 30 ? " (Higher quality)" : " (Lower quality)");
+        });
+
+        qualitySlider.addEventListener('change', function() {
+            const quality = this.value;
+            sendQualitySettings();
+        });
+
+        resolutionSelect.addEventListener('change', function() {
+            sendQualitySettings();
+        });
+
+        function sendQualitySettings() {
+            const resolution = resolutionSelect.value;
+            const quality = qualitySlider.value;
+            
+            fetch(`/quality?resolution=${resolution}&quality=${quality}`)
+                .then(response => response.text())
+                .then(result => {
+                    showStatus(`Quality updated: ${resolution}, compression: ${quality}`);
+                })
+                .catch(error => {
+                    showStatus('Failed to change quality: ' + error, true);
+                });
+        }
 
         function showStatus(message, isError = false) {
             statusDiv.textContent = message;
@@ -410,7 +691,7 @@
             streamImg.src = '/stream';
             streamImg.style.display = 'block';
             streamPlaceholder.style.display = 'none';
-            streamToggle.textContent = 'Stop Stream';
+            streamToggle.innerHTML = '<span class="material-icons">stop</span>';
             streamToggle.classList.add('active');
             showStatus('Starting stream...');
 
@@ -420,7 +701,7 @@
                     streamImg.style.display = 'none';
                     streamPlaceholder.style.display = 'flex';
                     isStreaming = false;
-                    streamToggle.textContent = 'Start Stream';
+                    streamToggle.innerHTML = '<span class="material-icons">play_arrow</span>';
                     streamToggle.classList.remove('active');
                 }
             };
@@ -434,47 +715,12 @@
                     streamImg.style.display = 'none';
                     streamImg.src = '';
                     streamPlaceholder.style.display = 'flex';
-                    streamToggle.textContent = 'Start Stream';
+                    streamToggle.innerHTML = '<span class="material-icons">play_arrow</span>';
                     streamToggle.classList.remove('active');
                     showStatus('Stream stopped');
                 })
                 .catch(error => {
                     showStatus('Failed to stop stream: ' + error, true);
-                });
-        }
-
-        function toggleQuality() {
-            isHD = !isHD;
-            const quality = isHD ? 'HD' : 'SD';
-            qualityButton.textContent = 'Quality: ' + quality;
-            qualityButton.classList.toggle('active', isHD);
-            
-            fetch('/quality?mode=' + quality)
-                .then(response => response.text())
-                .then(result => {
-                    showStatus('Quality changed to ' + quality);
-                })
-                .catch(error => {
-                    showStatus('Failed to change quality: ' + error, true);
-                });
-        }
-
-        function toggleLED() {
-            isLedOn = (isLedOn + 1) % 3;
-            const states = ['off', 'mid', 'high'];
-            const labels = ['LED Off', 'LED 50%', 'LED 100%'];
-            const state = states[isLedOn];
-            
-            ledButton.className = 'button led-' + state;
-            ledButton.textContent = labels[isLedOn];
-            
-            fetch('/led?state=' + state)
-                .then(response => response.text())
-                .then(result => {
-                    showStatus('LED turned ' + state);
-                })
-                .catch(error => {
-                    showStatus('Failed to control LED: ' + error, true);
                 });
         }
 
@@ -604,81 +850,17 @@
             resetJoystick(true);
         }, { passive: false });
 
-        // Обработчики для кнопок (только один способ обработки)
+        // Обработчики для кнопок
         streamToggle.addEventListener('click', toggleStream);
-        qualityButton.addEventListener('click', toggleQuality);
-        ledButton.addEventListener('click', toggleLED);
-        
-        // Обработчик кнопки режима управления
-        controlMode.addEventListener('click', () => {
-            // Меняем режим
-            isJoystickMode = !isJoystickMode;
-            const mode = isJoystickMode ? 'joystick' : 'sliders';
-            
-            // Обновляем текст на кнопке
-            controlMode.textContent = isJoystickMode ? 'Joystick' : 'Sliders';
-            
-            // Обновляем классы активности контейнеров
-            if (isJoystickMode) {
-                joystickControl.classList.add('active');
-                slidersControl.classList.remove('active');
-            } else {
-                joystickControl.classList.remove('active');
-                slidersControl.classList.add('active');
-            }
-            
-            // Управляем отображением элементов управления напрямую
-            const joystickContainer = document.querySelector('.joystick-container');
-            const slidersContainer = document.querySelector('.sliders-container');
-            
-            if (isBtActive) {
-                // Если BT активен, скрываем все элементы управления
-                if (joystickContainer) joystickContainer.style.display = 'none';
-                if (slidersContainer) slidersContainer.style.display = 'none';
-            } else {
-                // Иначе показываем соответствующие элементы
-                if (isJoystickMode) {
-                    if (joystickContainer) joystickContainer.style.display = 'block';
-                    if (slidersContainer) slidersContainer.style.display = 'none';
-                } else {
-                    if (joystickContainer) joystickContainer.style.display = 'none';
-                    if (slidersContainer) slidersContainer.style.display = 'block';
-                }
-            }
-            
-            // Сбрасываем визуальные элементы БЕЗ отправки запросов
-            if (isJoystickMode) {
-                // Сбрасываем джойстик без отправки данных
-                isDragging = false;
-                stick.style.transform = 'translate(-50%, -50%)';
-                currentX = 0;
-                currentY = 0;
-            } else {
-                // Сбрасываем слайдеры без отправки данных
-                leftThumb.style.top = '50%';
-                rightThumb.style.top = '50%';
-            }
-            
-            // Отправляем ТОЛЬКО ОДИН запрос на переключение режима
-            fetch('/control', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mode })
-            }).then(response => {
-                if (isBtActive && response.ok) {
-                    setTimeout(checkBluetoothStatus, 500);
-                }
-            }).catch(error => {
-                console.error('Failed to change control mode:', error);
-            });
-        });
 
         // Добавляем обработку тач-событий для кнопок
-        [streamToggle, qualityButton, ledButton, controlMode, fullscreenButton].forEach(button => {
-            button.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                button.click(); // Эмулируем обычный клик
-            }, { passive: false });
+        [streamToggle, fullscreenButton, settingsToggle, btToggle, joystickTab, slidersTab].forEach(button => {
+            if (button) {
+                button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    button.click(); // Эмулируем обычный клик
+                }, { passive: false });
+            }
         });
 
         // Предотвращаем скролл/зум на мобильных устройствах
@@ -900,20 +1082,20 @@
         initSliders();
 
         // Назначаем обработчик для кнопки включения/выключения Bluetooth
-        document.getElementById('bt-toggle').addEventListener('click', toggleBluetooth);
+        btToggle.addEventListener('click', toggleBluetooth);
         
         // Запускаем периодический опрос статуса Bluetooth
         checkBluetoothStatus();
 
         function checkBluetoothStatus() {
             fetch('/bt/status')
-                .then(response => response.text())
-                .then(status => {
-                    const btStatusElement = document.getElementById('bt-status');
-                    btStatusElement.textContent = status;
+                .then(response => response.json())
+                .then(data => {
+                    const btStatusElement = document.querySelector('.bt-status');
+                    btStatusElement.textContent = data.status;
                     
                     // Проверяем статус подключения
-                    const isConnected = status.includes("Готов к работе");
+                    const isConnected = data.connected;
                     
                     // Если статус изменился
                     if (isConnected !== btConnected) {
@@ -923,10 +1105,10 @@
                         btPollingInterval = btConnected ? 5000 : 2000; // 5 секунд если подключено, 2 секунды если нет
                     }
                     
-                    if (status.includes("Готов к работе")) {
+                    if (data.enabled) {
                         btStatusElement.classList.remove('status-disconnected');
                         btStatusElement.classList.add('status-connected');
-                        document.getElementById('bt-toggle').classList.add('active');
+                        btToggle.classList.add('active');
                         isBtActive = true;
                         
                         // Скрываем элементы управления напрямую
@@ -934,31 +1116,23 @@
                         const slidersContainer = document.querySelector('.sliders-container');
                         if (joystickContainer) joystickContainer.style.display = 'none';
                         if (slidersContainer) slidersContainer.style.display = 'none';
-                        document.getElementById('control-mode').classList.add('active');
-                    } else if (status.includes("Поиск")) {
-                        btStatusElement.classList.remove('status-connected');
-                        btStatusElement.classList.add('status-disconnected');
-                        document.getElementById('bt-toggle').classList.add('active');
-                        isBtActive = true;
                         
-                        // Скрываем элементы управления напрямую
-                        const joystickContainer = document.querySelector('.joystick-container');
-                        const slidersContainer = document.querySelector('.sliders-container');
-                        if (joystickContainer) joystickContainer.style.display = 'none';
-                        if (slidersContainer) slidersContainer.style.display = 'none';
-                        document.getElementById('control-mode').classList.add('active');
+                        // Показываем обе вкладки как активные при активном BT
+                        joystickTab.classList.add('active');
+                        slidersTab.classList.add('active');
                     } else {
                         btStatusElement.classList.remove('status-connected');
                         btStatusElement.classList.add('status-disconnected');
-                        document.getElementById('bt-toggle').classList.remove('active');
+                        btToggle.classList.remove('active');
                         isBtActive = false;
+                        
+                        // Обновляем выбранную вкладку
+                        joystickTab.classList.toggle('active', isJoystickMode);
+                        slidersTab.classList.toggle('active', !isJoystickMode);
                         
                         // Показываем соответствующие элементы управления напрямую
                         const joystickContainer = document.querySelector('.joystick-container');
                         const slidersContainer = document.querySelector('.sliders-container');
-                        const controlMode = document.getElementById('control-mode');
-                        
-                        controlMode.textContent = isJoystickMode ? 'Joystick' : 'Sliders';
                         
                         if (isJoystickMode) {
                             if (joystickContainer) joystickContainer.style.display = 'block';
@@ -1041,9 +1215,6 @@
 
         // Обновление UI кнопок в зависимости от состояния Bluetooth
         function updateButtonUI() {
-            const btToggle = document.getElementById('bt-toggle');
-            const btStatus = document.getElementById('bt-status');
-            
             if (isBtActive) {
                 btToggle.classList.add('active');
                 btToggle.textContent = 'Выключить BT';
@@ -1058,11 +1229,254 @@
 
         // Функция для сброса слайдеров без отправки данных
         function resetSlidersVisual() {
-            const leftThumb = document.getElementById('left-thumb');
-            const rightThumb = document.getElementById('right-thumb');
             leftThumb.style.top = '50%';
             rightThumb.style.top = '50%';
         }
+
+        // Predefined event handler for initializeSettings
+        function initializeSettings() {
+            // Get camera settings
+            fetch('/camera/settings')
+                .then(response => response.json())
+                .then(data => {
+                    // Update resolution select
+                    if (data.resolution) {
+                        const option = Array.from(resolutionSelect.options).find(opt => opt.value === data.resolution);
+                        if (option) {
+                            resolutionSelect.value = data.resolution;
+                        }
+                    }
+                    
+                    // Update quality slider
+                    if (data.quality) {
+                        qualitySlider.value = data.quality;
+                        qualityValue.textContent = data.quality + 
+                            (data.quality < 30 ? " (Higher quality)" : " (Lower quality)");
+                    }
+                    
+                    // Set initial LED value
+                    const initialLedValue = 0; // Default to off
+                    ledSlider.value = initialLedValue;
+                    updateLedValue(initialLedValue);
+                })
+                .catch(error => {
+                    console.error('Failed to get camera settings:', error);
+                });
+        }
+
+        // Call initialization on page load
+        initializeSettings();
+
+        // LED slider handling
+        ledSlider.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            updateLedValue(value);
+        });
+
+        ledSlider.addEventListener('change', function() {
+            const value = parseInt(this.value);
+            updateLedValue(value);
+            sendLedValue(value);
+        });
+
+        function updateLedValue(value) {
+            let status = 'Off';
+            
+            if (value > 0 && value <= 50) {
+                status = value + '% (Mid)';
+            } else if (value > 50) {
+                status = value + '% (High)';
+            }
+            
+            ledValue.textContent = 'LED: ' + status;
+        }
+
+        function sendLedValue(value) {
+            let state = 'off';
+            
+            if (value > 0 && value <= 50) {
+                state = 'mid';
+            } else if (value > 50) {
+                state = 'high';
+            }
+            
+            fetch('/led?state=' + state)
+                .then(response => response.text())
+                .then(result => {
+                    showStatus('LED brightness set to ' + ledValue.textContent);
+                })
+                .catch(error => {
+                    showStatus('Failed to control LED: ' + error, true);
+                });
+        }
+
+        // Control mode tabs handling
+        joystickTab.addEventListener('click', function() {
+            if (!isJoystickMode) {
+                toggleControlMode('joystick');
+            }
+        });
+
+        slidersTab.addEventListener('click', function() {
+            if (isJoystickMode) {
+                toggleControlMode('sliders');
+            }
+        });
+
+        function toggleControlMode(mode) {
+            isJoystickMode = mode === 'joystick';
+            
+            // Update tabs UI
+            joystickTab.classList.toggle('active', isJoystickMode);
+            slidersTab.classList.toggle('active', !isJoystickMode);
+            
+            // Update control containers
+            if (isJoystickMode) {
+                joystickControl.classList.add('active');
+                slidersControl.classList.remove('active');
+            } else {
+                joystickControl.classList.remove('active');
+                slidersControl.classList.add('active');
+            }
+            
+            // Update visible controls if not in BT mode
+            if (!isBtActive) {
+                const joystickContainer = document.querySelector('.joystick-container');
+                const slidersContainer = document.querySelector('.sliders-container');
+                
+                if (isJoystickMode) {
+                    if (joystickContainer) joystickContainer.style.display = 'block';
+                    if (slidersContainer) slidersContainer.style.display = 'none';
+                } else {
+                    if (joystickContainer) joystickContainer.style.display = 'none';
+                    if (slidersContainer) slidersContainer.style.display = 'block';
+                }
+            }
+            
+            // Reset control positions without sending data
+            if (isJoystickMode) {
+                isDragging = false;
+                stick.style.transform = 'translate(-50%, -50%)';
+                currentX = 0;
+                currentY = 0;
+            } else {
+                leftThumb.style.top = '50%';
+                rightThumb.style.top = '50%';
+            }
+            
+            // Send mode change
+            fetch('/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: mode })
+            }).then(response => {
+                if (isBtActive && response.ok) {
+                    setTimeout(checkBluetoothStatus, 500);
+                }
+            }).catch(error => {
+                console.error('Failed to change control mode:', error);
+            });
+        }
+
+        // Add custom slider touch handling
+        function setupCustomSlider(sliderElement, valueElement, updateCallback, changeCallback) {
+            let isActive = false;
+            let activeTouch = null;
+            
+            function getValueFromPosition(clientX) {
+                const rect = sliderElement.getBoundingClientRect();
+                let percentage = (clientX - rect.left) / rect.width;
+                percentage = Math.max(0, Math.min(1, percentage));
+                
+                const min = parseInt(sliderElement.min);
+                const max = parseInt(sliderElement.max);
+                return Math.round(min + percentage * (max - min));
+            }
+            
+            function updateSlider(clientX) {
+                const value = getValueFromPosition(clientX);
+                sliderElement.value = value;
+                updateCallback(value);
+            }
+            
+            sliderElement.addEventListener('mousedown', function(e) {
+                isActive = true;
+                updateSlider(e.clientX);
+                e.preventDefault();
+            }, { passive: false });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (isActive) {
+                    updateSlider(e.clientX);
+                    e.preventDefault();
+                }
+            }, { passive: false });
+            
+            document.addEventListener('mouseup', function(e) {
+                if (isActive) {
+                    isActive = false;
+                    changeCallback(parseInt(sliderElement.value));
+                }
+            });
+            
+            sliderElement.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 0) {
+                    isActive = true;
+                    activeTouch = e.touches[0].identifier;
+                    updateSlider(e.touches[0].clientX);
+                }
+                e.preventDefault();
+            }, { passive: false });
+            
+            document.addEventListener('touchmove', function(e) {
+                if (!isActive) return;
+                
+                // Find our touch
+                for (let i = 0; i < e.touches.length; i++) {
+                    const touch = e.touches[i];
+                    if (touch.identifier === activeTouch) {
+                        updateSlider(touch.clientX);
+                        e.preventDefault();
+                        break;
+                    }
+                }
+            }, { passive: false });
+            
+            function endTouch() {
+                if (isActive) {
+                    isActive = false;
+                    activeTouch = null;
+                    changeCallback(parseInt(sliderElement.value));
+                }
+            }
+            
+            document.addEventListener('touchend', endTouch);
+            document.addEventListener('touchcancel', endTouch);
+        }
+
+        // Setup the quality slider
+        setupCustomSlider(
+            qualitySlider,
+            qualityValue,
+            function(value) {
+                qualityValue.textContent = value + (value < 30 ? " (Higher quality)" : " (Lower quality)");
+            },
+            function(value) {
+                sendQualitySettings();
+            }
+        );
+
+        // Setup the LED slider
+        setupCustomSlider(
+            ledSlider,
+            ledValue,
+            function(value) {
+                updateLedValue(value);
+            },
+            function(value) {
+                sendLedValue(value);
+            }
+        );
     </script>
 </body>
 </html>

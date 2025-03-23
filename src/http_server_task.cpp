@@ -40,20 +40,77 @@ void TaskHttpServer(void* parameter) {
         server.send(200, "text/plain", "OK");
     });
 
-    // Quality control endpoint
+    // Quality control endpoint with new parameters for resolution and compression
     server.on("/quality", HTTP_GET, [&server]() {
-        String mode = server.arg("mode");
+        String resolution = server.arg("resolution");
+        String quality = server.arg("quality");
+        
         sensor_t * s = esp_camera_sensor_get();
         
         if (s != nullptr) {
-            if (mode == "HD") {
-                s->set_framesize(s, FRAMESIZE_VGA); // 640x480
-                s->set_quality(s, 10); // Лучшее качество для HD
-            } else {
+            // Set resolution based on the parameter
+            if (resolution == "QVGA") {
                 s->set_framesize(s, FRAMESIZE_QVGA); // 320x240
-                s->set_quality(s, 12); // Стандартное качество для SD
+            } else if (resolution == "VGA") {
+                s->set_framesize(s, FRAMESIZE_VGA); // 640x480
+            } else if (resolution == "SVGA") {
+                s->set_framesize(s, FRAMESIZE_SVGA); // 800x600
+            } else if (resolution == "XGA") {
+                s->set_framesize(s, FRAMESIZE_XGA); // 1024x768
+            } else if (resolution == "SXGA") {
+                s->set_framesize(s, FRAMESIZE_SXGA); // 1280x1024
             }
+            
+            // Set quality (compression) if provided
+            if (quality.length() > 0) {
+                int qualityValue = quality.toInt();
+                qualityValue = constrain(qualityValue, 10, 63);
+                s->set_quality(s, qualityValue);
+            }
+            
             server.send(200, "text/plain", "OK");
+        } else {
+            server.send(500, "text/plain", "Camera sensor not found");
+        }
+    });
+
+    // Get camera settings
+    server.on("/camera/settings", HTTP_GET, [&server]() {
+        sensor_t * s = esp_camera_sensor_get();
+        
+        if (s != nullptr) {
+            StaticJsonDocument<200> doc;
+            
+            // Map framesize to string representation
+            int framesize = s->status.framesize;
+            const char* resolution = "QVGA"; // Default
+            
+            switch(framesize) {
+                case FRAMESIZE_QVGA:
+                    resolution = "QVGA";
+                    break;
+                case FRAMESIZE_VGA:
+                    resolution = "VGA";
+                    break;
+                case FRAMESIZE_SVGA:
+                    resolution = "SVGA";
+                    break;
+                case FRAMESIZE_XGA:
+                    resolution = "XGA";
+                    break;
+                case FRAMESIZE_SXGA:
+                    resolution = "SXGA";
+                    break;
+                default:
+                    resolution = "QVGA";
+            }
+            
+            doc["resolution"] = resolution;
+            doc["quality"] = s->status.quality;
+            
+            String response;
+            serializeJson(doc, response);
+            server.send(200, "application/json", response);
         } else {
             server.send(500, "text/plain", "Camera sensor not found");
         }
