@@ -49,16 +49,32 @@ void TaskHttpServer(void* parameter) {
         
         if (s != nullptr) {
             // Set resolution based on the parameter
-            if (resolution == "QVGA") {
+            if (resolution == "QQVGA") {
+                s->set_framesize(s, FRAMESIZE_QQVGA); // 160x120
+            } else if (resolution == "QCIF") {
+                s->set_framesize(s, FRAMESIZE_QCIF); // 176x144
+            } else if (resolution == "HQVGA") {
+                s->set_framesize(s, FRAMESIZE_HQVGA); // 240x176
+            } else if (resolution == "240X240") {
+                s->set_framesize(s, FRAMESIZE_240X240); // 240x240
+            } else if (resolution == "QVGA") {
                 s->set_framesize(s, FRAMESIZE_QVGA); // 320x240
+            } else if (resolution == "CIF") {
+                s->set_framesize(s, FRAMESIZE_CIF); // 400x296
+            } else if (resolution == "HVGA") {
+                s->set_framesize(s, FRAMESIZE_HVGA); // 480x320
             } else if (resolution == "VGA") {
                 s->set_framesize(s, FRAMESIZE_VGA); // 640x480
             } else if (resolution == "SVGA") {
                 s->set_framesize(s, FRAMESIZE_SVGA); // 800x600
             } else if (resolution == "XGA") {
                 s->set_framesize(s, FRAMESIZE_XGA); // 1024x768
+            } else if (resolution == "HD") {
+                s->set_framesize(s, FRAMESIZE_HD); // 1280x720
             } else if (resolution == "SXGA") {
                 s->set_framesize(s, FRAMESIZE_SXGA); // 1280x1024
+            } else if (resolution == "UXGA") {
+                s->set_framesize(s, FRAMESIZE_UXGA); // 1600x1200
             }
             
             // Set quality (compression) if provided
@@ -86,8 +102,26 @@ void TaskHttpServer(void* parameter) {
             const char* resolution = "QVGA"; // Default
             
             switch(framesize) {
+                case FRAMESIZE_QQVGA:
+                    resolution = "QQVGA";
+                    break;
+                case FRAMESIZE_QCIF:
+                    resolution = "QCIF";
+                    break;
+                case FRAMESIZE_HQVGA:
+                    resolution = "HQVGA";
+                    break;
+                case FRAMESIZE_240X240:
+                    resolution = "240X240";
+                    break;
                 case FRAMESIZE_QVGA:
                     resolution = "QVGA";
+                    break;
+                case FRAMESIZE_CIF:
+                    resolution = "CIF";
+                    break;
+                case FRAMESIZE_HVGA:
+                    resolution = "HVGA";
                     break;
                 case FRAMESIZE_VGA:
                     resolution = "VGA";
@@ -98,8 +132,14 @@ void TaskHttpServer(void* parameter) {
                 case FRAMESIZE_XGA:
                     resolution = "XGA";
                     break;
+                case FRAMESIZE_HD:
+                    resolution = "HD";
+                    break;
                 case FRAMESIZE_SXGA:
                     resolution = "SXGA";
+                    break;
+                case FRAMESIZE_UXGA:
+                    resolution = "UXGA";
                     break;
                 default:
                     resolution = "QVGA";
@@ -107,6 +147,7 @@ void TaskHttpServer(void* parameter) {
             
             doc["resolution"] = resolution;
             doc["quality"] = s->status.quality;
+            doc["framesize"] = framesize; // Add numeric framesize for compatibility
             
             String response;
             serializeJson(doc, response);

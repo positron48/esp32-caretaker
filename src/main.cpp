@@ -36,14 +36,16 @@ bool initCamera() {
 
     // Init with high specs to pre-allocate larger buffers
     if (psramFound()) {
-        Serial.println("PSRAM found");
+        Serial.println("PSRAM found, using higher resolution");
+        config.frame_size = FRAMESIZE_UXGA; // Higher resolution for initialization
+        config.jpeg_quality = 10; // Better quality
+        config.fb_count = 2;
     } else {
-        Serial.println("PSRAM not found");
+        Serial.println("PSRAM not found, using lower resolution");
+        config.frame_size = FRAMESIZE_SVGA;
+        config.jpeg_quality = 12;
+        config.fb_count = 1;
     }
-
-    config.frame_size = FRAMESIZE_SVGA;
-    config.jpeg_quality = JPEG_QUALITY;
-    config.fb_count = FB_COUNT;
 
     // Camera init
     esp_err_t err = esp_camera_init(&config);
@@ -52,9 +54,21 @@ bool initCamera() {
         return false;
     }
 
+    // Set to desired frame size after initialization
     sensor_t * s = esp_camera_sensor_get();
     s->set_framesize(s, FRAME_SIZE);
+    
+    // Set quality and other settings
     s->set_quality(s, JPEG_QUALITY);
+    
+    // Additional settings from the example
+    if (s->id.PID == OV3660_PID) {
+        s->set_vflip(s, 1);
+        s->set_brightness(s, 1);
+        s->set_saturation(s, -2);
+    }
+    
+    Serial.println("Camera initialized successfully");
     return true;
 }
 
@@ -99,7 +113,7 @@ void setup() {
         1
     );
 
-    // Create HTTP server task on core 1
+    // Create HTTP server task on core 0
     xTaskCreatePinnedToCore(
         TaskHttpServer,
         "HttpServer",
@@ -107,7 +121,7 @@ void setup() {
         NULL,
         1,
         NULL,
-        1
+        0
     );
     
     // Create Bluetooth task on core 0

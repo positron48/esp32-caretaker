@@ -7,6 +7,37 @@ uint8_t* streamBuffer = nullptr;
 size_t streamBufferSize = 0;
 WebServer* streamServer = nullptr;
 WiFiClient streamClient;
+ra_filter_t ra_filter;
+
+// Initialize frame rate filter
+ra_filter_t* ra_filter_init(ra_filter_t* filter, size_t sample_size) {
+    memset(filter, 0, sizeof(ra_filter_t));
+
+    filter->values = (int*)malloc(sample_size * sizeof(int));
+    if (!filter->values) {
+        return nullptr;
+    }
+    memset(filter->values, 0, sample_size * sizeof(int));
+
+    filter->size = sample_size;
+    return filter;
+}
+
+// Run frame rate filter calculation
+int ra_filter_run(ra_filter_t* filter, int value) {
+    if (!filter->values) {
+        return value;
+    }
+    filter->sum -= filter->values[filter->index];
+    filter->values[filter->index] = value;
+    filter->sum += filter->values[filter->index];
+    filter->index++;
+    filter->index = filter->index % filter->size;
+    if (filter->count < filter->size) {
+        filter->count++;
+    }
+    return filter->sum / filter->count;
+}
 
 void initStreamHandler(WebServer* server) {
     if (!streamBuffer) {
@@ -15,9 +46,15 @@ void initStreamHandler(WebServer* server) {
             Serial.println("Failed to allocate stream buffer");
             return;
         }
+        Serial.printf("Allocated stream buffer of %u bytes on PSRAM\n", MAX_FRAME_SIZE);
     }
     streamServer = server;
     isStreaming = false;
+    
+    // Initialize frame rate filter with 20 samples (like in example)
+    ra_filter_init(&ra_filter, 20);
+    
+    Serial.println("Stream handler initialized successfully");
 }
 
 void cleanupStreamHandler() {
@@ -98,7 +135,7 @@ bool sendMJPEGFrame(const uint8_t* buf, size_t len) {
     }
 
     // Send JPEG data in chunks
-    const size_t chunkSize = 8192; // Увеличиваем размер чанка до 8KB
+    const size_t chunkSize = 8192; // Optimized chunk size (8KB)
     size_t remaining = len;
     const uint8_t* ptr = buf;
     
@@ -113,21 +150,27 @@ bool sendMJPEGFrame(const uint8_t* buf, size_t len) {
         remaining -= written;
     }
     
-    // Делаем flush только после отправки всего кадра
+    // Flush only after sending the entire frame
     streamClient.flush();
     return true;
 }
 
 void streamTask(void* parameter) {
-    Serial.println("Stream task started");
-    vTaskDelay(pdMS_TO_TICKS(200)); // Уменьшаем начальную задержку
+    Serial.println("Stream task started on core " + String(xPortGetCoreID()));
+    vTaskDelay(pdMS_TO_TICKS(200)); // Initial delay
 
-    uint32_t lastFrameTime = millis();
+    int64_t lastFrameTime = 0;
+    int64_t currentTime = 0;
     uint32_t frameCount = 0;
     uint32_t errorCount = 0;
     const uint32_t MAX_ERRORS = 3;
+    
+    // Initialize the last frame time
+    lastFrameTime = esp_timer_get_time();
 
     while (isStreaming && streamClient.connected()) {
+        int64_t fr_start = esp_timer_get_time();
+        
         camera_fb_t* fb = esp_camera_fb_get();
         if (!fb) {
             Serial.println("Failed to get camera frame");
@@ -138,39 +181,85 @@ void streamTask(void* parameter) {
             vTaskDelay(pdMS_TO_TICKS(100));
             continue;
         }
+        
+        int64_t fr_ready = esp_timer_get_time();
+        int64_t fr_encode = fr_ready; // Initialize for JPEG format
 
-        if (fb->len > MAX_FRAME_SIZE) {
-            Serial.printf("Frame too large: %u bytes\n", fb->len);
+        if (fb->format != PIXFORMAT_JPEG) {
+            // Convert to JPEG if needed
+            bool jpeg_converted = frame2jpg(fb, 80, &streamBuffer, &streamBufferSize);
             esp_camera_fb_return(fb);
-            continue;
-        }
+            fb = nullptr;
+            if (!jpeg_converted) {
+                Serial.println("JPEG compression failed");
+                if (++errorCount > MAX_ERRORS) {
+                    break;
+                }
+                continue;
+            }
+            
+            if (!sendMJPEGFrame(streamBuffer, streamBufferSize)) {
+                Serial.println("Failed to send frame");
+                break;
+            }
+            
+            fr_encode = esp_timer_get_time();
+        } else {
+            // Direct JPEG format
+            if (fb->len > MAX_FRAME_SIZE) {
+                Serial.printf("Frame too large: %u bytes\n", fb->len);
+                esp_camera_fb_return(fb);
+                continue;
+            }
 
-        if (!sendMJPEGFrame(fb->buf, fb->len)) {
-            Serial.println("Failed to send frame");
+            if (!sendMJPEGFrame(fb->buf, fb->len)) {
+                Serial.println("Failed to send frame");
+                esp_camera_fb_return(fb);
+                break;
+            }
+            
+            fr_encode = esp_timer_get_time();
+        }
+        
+        if (fb) {
             esp_camera_fb_return(fb);
-            break;
+            fb = nullptr;
         }
-
-        esp_camera_fb_return(fb);
+        
         frameCount++;
         errorCount = 0;
-
+        
+        // Calculate timings
+        int64_t fr_end = esp_timer_get_time();
+        int64_t ready_time = (fr_ready - fr_start) / 1000;
+        int64_t encode_time = (fr_encode - fr_ready) / 1000;
+        int64_t process_time = (fr_encode - fr_start) / 1000;
+        
+        int64_t frame_time = fr_end - lastFrameTime;
+        lastFrameTime = fr_end;
+        frame_time /= 1000; // Convert to ms
+        
+        // Use the frame rate filter
+        uint32_t avg_frame_time = ra_filter_run(&ra_filter, frame_time);
+        
         // Print stats every 30 frames
         if (frameCount % 30 == 0) {
-            uint32_t elapsed = (millis() - lastFrameTime) / 1000;
-            if (elapsed > 0) {
-                Serial.printf("Stream stats: %u frames, %u fps\n", 
-                    frameCount, frameCount / elapsed);
-            }
-            lastFrameTime = millis(); // Сбрасываем время для следующего расчета FPS
+            Serial.printf("MJPG: %uB %ums (%.1ffps), AVG: %ums (%.1ffps), %u+%u=%u\n",
+                (fb ? fb->len : streamBufferSize),
+                (uint32_t)frame_time, 1000.0 / (uint32_t)frame_time,
+                avg_frame_time, 1000.0 / avg_frame_time,
+                (uint32_t)ready_time, (uint32_t)encode_time, (uint32_t)process_time
+            );
         }
 
-        // Maintain frame rate
-        uint32_t frameTime = millis() - lastFrameTime;
-        if (frameTime < STREAM_DELAY_MS) {
-            vTaskDelay(pdMS_TO_TICKS(STREAM_DELAY_MS - frameTime));
+        // Maintain frame rate with adaptive delay
+        uint32_t elapsed = (fr_end - lastFrameTime) / 1000;
+        if (elapsed < STREAM_DELAY_MS) {
+            vTaskDelay(pdMS_TO_TICKS(STREAM_DELAY_MS - elapsed));
+        } else {
+            // Give other tasks on the same core a chance to run
+            vTaskDelay(1);
         }
-        lastFrameTime = millis();
     }
 
     Serial.println("Stream task ending");
