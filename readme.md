@@ -12,11 +12,12 @@ This project implements a remote-controlled robot using an ESP32-CAM board. It f
 *   **Dual Motor Control:** Controls two motors using an L298N motor driver, enabling forward/backward movement and turning.
 *   **Web-Based Control Interface:** Provides a user-friendly web interface for controlling the robot from any device with a web browser.
 *   **Joystick and Slider Control Modes:** Offers two control modes: a virtual joystick for intuitive control and sliders for individual motor speed adjustment.
-*   **Adjustable Video Quality:** Allows switching between SD (QVGA) and HD (VGA) video quality to optimize for bandwidth or clarity.
-*   **On-board LED Control:** Controls the brightness of the ESP32-CAM's on-board LED with off, mid (50%), and high (100%) settings.
+*   **Adjustable Video Quality:** Allows switching between multiple video resolutions (QQVGA, QCIF, HQVGA, QVGA, CIF, HVGA, VGA, SVGA, XGA, HD, SXGA, UXGA) to optimize for bandwidth or clarity.
+*   **On-board LED Control:** Controls the brightness of the ESP32-CAM's on-board LED with precise adjustment from 0-100%.
+*   **Bluetooth Controller Support:** Connect a physical Bluetooth joystick (like ExpressLRS Joystick) for more precise control.
 *   **Task Usage Statistics:** Monitors and displays the CPU usage of different tasks running on the ESP32, aiding in performance analysis and optimization.
 *   **WiFi Connectivity:** Connects to a WiFi network for remote control and streaming.
-*   **SPIFFS Filesystem:** Uses SPIFFS to store the web interface files (HTML, CSS, JavaScript).
+*   **Embedded Web Interface:** The HTML interface is embedded directly into the firmware as a C header file during build process, eliminating the need for a separate filesystem.
 
 ## How It Works
 
@@ -41,14 +42,16 @@ The project is built using the Arduino framework for ESP32 and leverages FreeRTO
 4.  **HTTP Server (`include/http_server_task.h`, `src/http_server_task.cpp`):**
     *   Runs as a FreeRTOS task (`TaskHttpServer`) on core 1.
     *   Uses the `WebServer.h` library to handle HTTP requests.
-    *   Serves the web interface files (HTML, JavaScript, CSS) from the SPIFFS filesystem.
+    *   Serves the web interface HTML from the embedded constant array `INDEX_HTML` in `html_content.h`.
     *   Handles endpoints for:
-        *   `/` : Serves the main HTML page (`index.html`).
-        *   `/led?state={off|mid|high}` : Controls the LED brightness.
-        *   `/quality?mode={SD|HD}` : Changes the video quality.
+        *   `/` : Serves the main HTML page from the embedded array.
+        *   `/led?brightness={0-100}` : Controls the LED brightness with precise control.
+        *   `/quality?resolution={RESOLUTION}` : Changes the video resolution (e.g., QVGA, VGA, HD).
         *   `/control` (POST): Receives motor control commands in JSON format from the web interface for both joystick and slider modes.
         *   `/stream` : Starts the video stream.
         *   `/stopstream` : Stops the video stream.
+        *   `/bt?state={on|off}` : Enables or disables Bluetooth controller support.
+        *   `/bt/status` : Returns the current Bluetooth connection status.
 
 5.  **Video Streaming (`include/stream_task.h`, `src/stream_task.cpp`, `include/stream_constants.h`):**
     *   Runs as a FreeRTOS task (`streamTask`) on core 0.
@@ -57,21 +60,27 @@ The project is built using the Arduino framework for ESP32 and leverages FreeRTO
     *   Uses constants defined in `stream_constants.h` (startLine: 7, endLine: 28) for stream configuration like buffer sizes, task priority, and content types.
     *   Implements functions to start (`handleStartStream`), stop (`handleStopStream`), and manage the stream.
 
-6.  **Web Interface (`data/html/index.html`):**
-    *   Provides the user interface for controlling the robot.
-    *   Uses HTML, CSS, and JavaScript to create interactive joystick and slider controls, buttons for stream, quality, and LED control.
-    *   Sends HTTP requests to the ESP32-CAM to control motors, LED, and video quality.
-    *   Receives and displays the video stream from the `/stream` endpoint.
+6.  **Web Interface Generation (`scripts/pre_build_script.py`, `scripts/generate_html.py`):**
+    *   During build process, the HTML file from `data/html/index.html` is converted into a C header file.
+    *   The script creates a C header file `include/html_content.h` with the HTML content embedded as a string constant.
+    *   This approach eliminates the need for a separate file system and reduces memory usage.
+    *   Configuration for this process is specified in `platformio.ini` with `custom_html_source` and `custom_html_header` variables.
 
-7.  **Task Statistics (`include/task_stats.h`, `src/log_task.cpp`):**
+7.  **Bluetooth Control (`include/bluetooth_task.h`, `src/bluetooth_task.cpp`):**
+    *   Implements Bluetooth Low Energy (BLE) support using the NimBLE library.
+    *   Scans for and connects to specific Bluetooth controllers (e.g., ExpressLRS Joystick).
+    *   Processes joystick input from the Bluetooth controller and translates it to motor commands.
+    *   Provides status information and connection management via the web interface.
+
+8.  **Task Statistics (`include/task_stats.h`, `src/log_task.cpp`):**
     *   Collects and displays runtime statistics for FreeRTOS tasks.
     *   The `TaskLog` (startLine: 6) task runs on core 1 and periodically prints task runtime statistics using `vTaskGetRunTimeStats` (startLine: 18) to the serial monitor.
     *   This helps in monitoring CPU usage and identifying potential performance bottlenecks.
 
-8.  **Configuration Files (`config.h`, `.env`, `platformio.ini`, `sdkconfig.defaults`):**
+9.  **Configuration Files (`config.h`, `.env`, `platformio.ini`, `sdkconfig.defaults`):**
     *   `config.h`: Defines hardware configurations like camera settings, LED pin, motor control parameters, and stream settings.
     *   `.env`: Stores sensitive information like WiFi SSID and password as environment variables, which are loaded during the build process.
-    *   `platformio.ini`: Configuration file for PlatformIO, defining the platform, board, framework, build flags, libraries, and filesystem settings.
+    *   `platformio.ini`: Configuration file for PlatformIO, defining the platform, board, framework, build flags, libraries, and HTML-to-header conversion.
     *   `sdkconfig.defaults`:  ESP-IDF configuration defaults, enabling FreeRTOS runtime statistics (startLine: 2, endLine: 5).
 
 ## Installation
@@ -84,6 +93,7 @@ Follow these steps to set up and run the project:
 2.  **ESP32-CAM Board:** You will need an ESP32-CAM module.
 3.  **USB to Serial Converter:** To upload code to the ESP32-CAM, you'll need a USB to Serial converter (like FTDI adapter). Ensure it's compatible with 3.3V logic levels.
 4.  **L298N Motor Driver (Optional):** If you want to control motors, you'll need an L298N motor driver and two DC motors.
+5.  **Bluetooth Controller (Optional):** For physical control, an ExpressLRS Joystick or similar BLE joystick can be used.
 
 ### Project Setup
 
@@ -101,16 +111,15 @@ Follow these steps to set up and run the project:
 4.  **PlatformIO Configuration (`platformio.ini`):**
     *   Ensure the `platformio.ini` file is configured for the `esp32cam` environment.
     *   The `build_flags` in `platformio.ini` (startLine: 12) uses a bash script `generate_build_flags.sh` (startLine: 1) to inject the WiFi credentials from the `.env` file into the build process. Make sure this script is executable (`chmod +x generate_build_flags.sh`).
+    *   The configuration also specifies the HTML source file and target header file for the web interface conversion.
 
 5.  **Build the Firmware:** In PlatformIO IDE, build the project by clicking on the PlatformIO icon in the Activity Bar, then under "Project Tasks" -> "esp32cam" -> "Build".
+    *   During the build process, the HTML file is automatically converted to a C header file using the Python script in `scripts/pre_build_script.py`.
 
-### Upload Firmware and Filesystem
+### Upload Firmware
 
 1.  **Connect ESP32-CAM:** Connect the ESP32-CAM to your USB to Serial converter for flashing.  **Important:** You might need to connect GPIO0 to GND during flashing to put the ESP32 into programming mode. Refer to ESP32-CAM documentation for specific wiring and boot mode instructions.
 2.  **Upload Firmware:** In PlatformIO IDE, upload the firmware by clicking on "Upload" under "Project Tasks" -> "esp32cam".
-3.  **Upload Filesystem (SPIFFS):**
-    *   PlatformIO is configured to use SPIFFS (startLine: 21).
-    *   To upload the web interface files in the `data` directory to SPIFFS, click on "Upload File System Image" under "Project Tasks" -> "esp32cam". This will upload the contents of the `data` directory to the ESP32-CAM's SPIFFS partition.
 
 ### Wiring for Motors (Optional)
 
@@ -164,6 +173,14 @@ You can customize various aspects of the project by modifying the configuration 
     *   `MOTOR_MAX_POWER` (startLine: 22): Maximum PWM value for motors (typically 255 for 8-bit resolution).
     *   `MOTOR_TURN_THRESHOLD` (startLine: 23): Joystick X-axis threshold to activate on-the-spot turning.
 
+### `joystick_config.h`
+
+*   **Bluetooth Joystick Parameters:**
+    *   `JOYSTICK_DEVICE_NAME`: The name of the Bluetooth joystick to connect to (default is "ExpressLRS Joystick").
+    *   `BLE_SCAN_TIME`: How long to scan for Bluetooth devices (in seconds).
+    *   `BLE_RESCAN_INTERVAL`: How often to rescan if a device is not found (in milliseconds).
+    *   Various calibration parameters for the joystick axes to match your specific controller.
+
 ### `.env`
 
 *   **WiFi Credentials:**
@@ -177,6 +194,13 @@ You can customize various aspects of the project by modifying the configuration 
     *   `CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS` (startLine: 3): Enable formatting functions for runtime statistics.
     *   `CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE` (startLine: 4): Set runtime counter type.
 
+### Web Interface Customization
+
+To modify the web interface:
+1. Edit the HTML file in `data/html/index.html`
+2. The changes will be automatically incorporated during the next build
+3. No need to upload filesystem images as the HTML is embedded in the firmware
+
 ## Usage
 
 1.  **Power On:** Power on the ESP32-CAM board. Ensure it is connected to your WiFi network.
@@ -187,8 +211,9 @@ You can customize various aspects of the project by modifying the configuration 
     *   **Control Mode:** Select "Joystick" or "Sliders" control mode using the "Control Mode" button.
     *   **Joystick Control:** Use the on-screen joystick to control the robot's movement. Drag the stick to move forward, backward, left, or right.
     *   **Slider Control:** In slider mode, use the left and right vertical sliders to control the speed of the left and right motors independently.
-    *   **Quality:** Change video quality between "SD" and "HD" using the "Quality" button.
-    *   **LED Control:** Toggle the on-board LED brightness using the "LED" button (Off, 50%, 100%).
+    *   **Resolution:** Change video resolution using the dropdown in the settings panel. Multiple resolutions are available from QQVGA to UXGA.
+    *   **LED Control:** Adjust the on-board LED brightness using the slider in the settings panel (0-100%).
+    *   **Bluetooth Control:** Enable Bluetooth control by clicking the "Bluetooth" button. The interface will show connection status and automatically try to connect to the configured Bluetooth joystick.
     *   **Fullscreen:** Enter or exit fullscreen mode using the "⛶" button.
 
 ## Customization

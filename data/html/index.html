@@ -290,42 +290,73 @@
         }
 
         .bt-status {
-            display: none;
-            color: #fff;
-            font-size: 14px;
+            margin-top: 8px;
             padding: 8px 12px;
-            background: rgba(0, 0, 0, 0.5);
             border-radius: 4px;
-            margin-top: 10px;
-            width: 100%;
-            text-align: center;
-            box-sizing: border-box;
-            font-weight: 500;
-            letter-spacing: 0.2px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 13px;
             transition: all 0.3s ease;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
+
+        .bt-status::before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background-color: #666;
+        }
+
         .bt-status.active {
-            display: block;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
-        
+
         .bt-status.status-connected {
-            background: rgba(76, 175, 80, 0.2);
-            border-color: rgba(76, 175, 80, 0.4);
+            color: #4caf50;
         }
-        
+
+        .bt-status.status-connected::before {
+            background-color: #4caf50;
+            box-shadow: 0 0 6px #4caf50;
+        }
+
         .bt-status.status-disconnected {
-            background: rgba(244, 67, 54, 0.1);
-            border-color: rgba(244, 67, 54, 0.3);
+            color: #f44336;
+        }
+
+        .bt-status.status-disconnected::before {
+            background-color: #f44336;
+            box-shadow: 0 0 6px #f44336;
         }
 
         .bt-status.status-scanning {
-            background: rgba(255, 152, 0, 0.2);
-            border-color: rgba(255, 152, 0, 0.4);
+            color: #2196f3;
+        }
+
+        .bt-status.status-scanning::before {
+            background-color: #2196f3;
+            box-shadow: 0 0 6px #2196f3;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0.8);
+                opacity: 0.7;
+            }
         }
         
         .settings-section .button {
@@ -609,7 +640,10 @@
                     <span class="material-icons" style="margin-right: 5px; font-size: 18px;">bluetooth</span>
                     <span>Bluetooth</span>
                 </button>
-                <div class="bt-status">Bluetooth: Выключен</div>
+                <div class="bt-status">
+                    <span class="bt-status-icon"></span>
+                    <span class="bt-status-text">Bluetooth: Выключен</span>
+                </div>
             </div>
             
             <div class="settings-section">
@@ -1136,7 +1170,8 @@
                 .then(response => response.json())
                 .then(data => {
                     const btStatusElement = document.querySelector('.bt-status');
-                    btStatusElement.textContent = data.status;
+                    const btStatusText = document.querySelector('.bt-status-text') || btStatusElement;
+                    btStatusText.textContent = data.status;
                     
                     // Проверяем статус подключения
                     const isConnected = data.connected;
