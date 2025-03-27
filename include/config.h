@@ -1,21 +1,32 @@
+// Motor Control configuration
+#define MOTOR_LEFT_IN1 12  // in1
+#define MOTOR_LEFT_IN2 13  // in2
+#define MOTOR_RIGHT_IN1 15 // in3
+#define MOTOR_RIGHT_IN2 14 // in4
+
+// Motor PWM configuration
+#define MOTOR_PWM_CHANNEL_LEFT1 2  // PWM channel for left motor IN1
+#define MOTOR_PWM_CHANNEL_LEFT2 3  // PWM channel for left motor IN2
+#define MOTOR_PWM_CHANNEL_RIGHT1 4 // PWM channel for right motor IN1
+#define MOTOR_PWM_CHANNEL_RIGHT2 5 // PWM channel for right motor IN2
+#define MOTOR_PWM_FREQ 10000
+#define MOTOR_PWM_RESOLUTION 8     // 8-bit resolution (0-255)
+
+// Motor control parameters
+#define MOTOR_DEADZONE 0.15f       // Значения стика меньше этого игнорируются
+#define MOTOR_MIN_POWER 90         // Минимальное значение PWM для начала движения
+#define MOTOR_MAX_POWER 255        // Максимальное значение PWM
+#define MOTOR_TURN_THRESHOLD 0.8f  // Порог для включения разворота на месте
+
+
+// Константы для led
+#define LED_PIN 4
+#define LED_CHANNEL 1 // Канал LEDC (0-15)
+#define LED_RESOLUTION 12 // Разрешение (1-14 бит)
+#define LED_FREQUENCY 10000 // Частота PWM в Гц
+
+
 // Camera configuration
-/**
- * FRAMESIZE_QQVGA - 160x120
- * FRAMESIZE_QCIF - 176x144
- * FRAMESIZE_HQVGA - 240x176
- * FRAMESIZE_240X240 - 240x240
- * FRAMESIZE_QVGA - 320x240
- * FRAMESIZE_CIF - 400x296
- * FRAMESIZE_HVGA - 480x320
- * FRAMESIZE_VGA - 640x480
- * FRAMESIZE_SVGA - 800x600
- * FRAMESIZE_XGA - 1024x768
- * FRAMESIZE_HD - 1280x720
- * FRAMESIZE_SXGA - 1280x1024
- * FRAMESIZE_UXGA - 1600x1200
- */
-#define CAMERA_FRAMESIZE FRAMESIZE_QVGA
-#define CAMERA_JPEG_QUALITY 12 // 0-63 (lower means higher quality)
 #define CAMERA_XCLK_FREQ 20000000 // 20MHz
 #define CAMERA_PIXEL_FORMAT PIXFORMAT_JPEG
 #define CAMERA_FB_COUNT 2 // Frame buffer count
@@ -32,18 +43,6 @@
 #define STR_STREAM_CONTENT_TYPE "multipart/x-mixed-replace;boundary=123456789000000000000987654321"
 #define STR_STREAM_BOUNDARY "\r\n--123456789000000000000987654321\r\n"
 #define STR_STREAM_PART "Content-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n"
-
-
-// Константы для led
-#define LED_PIN 4
-#define LED_CHANNEL 1 // Канал LEDC (0-15)
-#define LED_RESOLUTION 12 // Разрешение (1-14 бит)
-#define LED_FREQUENCY 10000 // Частота PWM в Гц
-
-#define LED_BRIGHT_OFF 0 // яркость светодиода
-#define LED_BRIGHT_MID 400
-#define LED_BRIGHT_HIGH 4095
-
 
 // Camera pins for ESP32-CAM
 #define PWDN_GPIO_NUM     32
@@ -62,3 +61,18 @@
 #define VSYNC_GPIO_NUM    25
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
+
+
+// Bluetooth Joystick configuration
+#define JOYSTICK_DEVICE_NAME "ExpressLRS Joystick"
+#define BLE_SCAN_TIME 5        // Время сканирования BLE устройств в секундах
+#define BLE_RESCAN_INTERVAL 10000 // Период повторного сканирования, если устройство не найдено (в мс)
+
+// Joystick calibration parameters
+#define LEFT_JOYSTICK_X_MIN 19
+#define LEFT_JOYSTICK_X_MAX 32767
+#define LEFT_JOYSTICK_X_CENTER 16693
+
+#define LEFT_JOYSTICK_Y_MIN 19
+#define LEFT_JOYSTICK_Y_MAX 31527
+#define LEFT_JOYSTICK_Y_CENTER 16693

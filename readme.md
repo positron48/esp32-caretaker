@@ -149,8 +149,6 @@ You can customize various aspects of the project by modifying the configuration 
 ### `config.h`
 
 *   **Camera Settings:**
-    *   `CAMERA_FRAMESIZE` (startLine: 10):  Set the video resolution (e.g., `FRAMESIZE_QVGA`, `FRAMESIZE_VGA`, `FRAMESIZE_SVGA`). Lower resolutions reduce bandwidth usage.
-    *   `CAMERA_JPEG_QUALITY` (startLine: 11): Adjust JPEG quality (0-63, lower is better quality but larger size).
     *   `CAMERA_XCLK_FREQ` (startLine: 12): Camera clock frequency.
     *   `CAMERA_PIXEL_FORMAT` (startLine: 13): Pixel format, typically `PIXFORMAT_JPEG`.
     *   `CAMERA_FB_COUNT` (startLine: 14): Number of frame buffers.
@@ -158,7 +156,6 @@ You can customize various aspects of the project by modifying the configuration 
 *   **LED Settings:**
     *   `LED_PIN` (startLine: 31): GPIO pin connected to the LED.
     *   `LED_CHANNEL`, `LED_RESOLUTION`, `LED_FREQUENCY` (startLine: 32, endLine: 35): PWM settings for LED control.
-    *   `LED_BRIGHT_OFF`, `LED_BRIGHT_MID`, `LED_BRIGHT_HIGH` (startLine: 36, endLine: 38): PWM values for different LED brightness levels.
 
 *   **Stream Settings:**
     *   `STR_MAX_FRAME_SIZE` (startLine: 17): Maximum frame size for streaming.

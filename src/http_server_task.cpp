@@ -39,18 +39,6 @@ void TaskHttpServer(void* parameter) {
             // Используем максимум из LED_RESOLUTION (12 бит = 4095)
             pwmValue = map(brightness, 0, 100, 0, (1 << LED_RESOLUTION) - 1);
         }
-        // Поддерживаем и старый формат для обратной совместимости
-        else if (server.hasArg("state")) {
-            String state = server.arg("state");
-            
-            if (state == "off") {
-                pwmValue = LED_BRIGHT_OFF;
-            } else if (state == "mid") {
-                pwmValue = LED_BRIGHT_MID;
-            } else if (state == "high") {
-                pwmValue = LED_BRIGHT_HIGH;
-            }
-        }
         
         ledcWrite(LED_CHANNEL, pwmValue);
         server.send(200, "text/plain", "OK");

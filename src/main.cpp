@@ -37,12 +37,12 @@ bool initCamera() {
     // Init with high specs to pre-allocate larger buffers
     if (psramFound()) {
         Serial.println("PSRAM found, using higher resolution");
-        config.frame_size = FRAMESIZE_UXGA; // Higher resolution for initialization
+        config.frame_size = FRAMESIZE_XGA; // Higher resolution for initialization
         config.jpeg_quality = 10; // Better quality
         config.fb_count = 2;
     } else {
         Serial.println("PSRAM not found, using lower resolution");
-        config.frame_size = FRAMESIZE_SVGA;
+        config.frame_size = FRAMESIZE_HVGA;
         config.jpeg_quality = 12;
         config.fb_count = 1;
     }
@@ -56,10 +56,6 @@ bool initCamera() {
 
     // Set to desired frame size after initialization
     sensor_t * s = esp_camera_sensor_get();
-    s->set_framesize(s, FRAME_SIZE);
-    
-    // Set quality and other settings
-    s->set_quality(s, JPEG_QUALITY);
     
     // Additional settings from the example
     if (s->id.PID == OV3660_PID) {
