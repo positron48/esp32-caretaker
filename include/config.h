@@ -13,10 +13,10 @@
 #define MOTOR_PWM_RESOLUTION 8     // 8-bit resolution (0-255)
 
 // Motor control parameters
-#define MOTOR_DEADZONE 0.15f       // Значения стика меньше этого игнорируются
-#define MOTOR_MIN_POWER 90         // Минимальное значение PWM для начала движения
+#define MOTOR_DEADZONE 0.05f       // Значения стика меньше этого игнорируются
+#define MOTOR_MIN_POWER 30         // Минимальное значение PWM для начала движения
 #define MOTOR_MAX_POWER 255        // Максимальное значение PWM
-#define MOTOR_TURN_THRESHOLD 0.8f  // Порог для включения разворота на месте
+#define MOTOR_TURN_THRESHOLD 0.5f  // Порог для включения разворота на месте
 
 
 // Константы для led
