@@ -20,7 +20,10 @@ void TaskHttpServer(void* parameter) {
 
     // Setup routes
     server.on("/", HTTP_GET, [&server]() {
-        server.send(200, "text/html", INDEX_HTML);
+        // Send gzipped HTML content with appropriate headers
+        server.sendHeader("Content-Encoding", "gzip");
+        server.sendHeader("Cache-Control", "max-age=86400");
+        server.send_P(200, "text/html", (const char*)INDEX_HTML, INDEX_HTML_SIZE);
     });
 
     // LED control endpoint

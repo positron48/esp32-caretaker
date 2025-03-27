@@ -60,10 +60,12 @@ The project is built using the Arduino framework for ESP32 and leverages FreeRTO
     *   Uses constants defined in `stream_constants.h` (startLine: 7, endLine: 28) for stream configuration like buffer sizes, task priority, and content types.
     *   Implements functions to start (`handleStartStream`), stop (`handleStopStream`), and manage the stream.
 
-6.  **Web Interface Generation (`scripts/pre_build_script.py`, `scripts/generate_html.py`):**
+6.  **Web Interface Generation (`scripts/pre_build_script.py`):**
     *   During build process, the HTML file from `data/html/index.html` is converted into a C header file.
-    *   The script creates a C header file `include/html_content.h` with the HTML content embedded as a string constant.
-    *   This approach eliminates the need for a separate file system and reduces memory usage.
+    *   The HTML content is compressed using gzip to significantly reduce memory usage.
+    *   The compressed data is stored as a byte array in `include/html_content.h`.
+    *   When the browser requests the HTML, it is served with appropriate headers (`Content-Encoding: gzip`), so the browser automatically decompresses it.
+    *   This approach improves load time, reduces bandwidth usage, and minimizes ESP32 memory consumption.
     *   Configuration for this process is specified in `platformio.ini` with `custom_html_source` and `custom_html_header` variables.
 
 7.  **Bluetooth Control (`include/bluetooth_task.h`, `src/bluetooth_task.cpp`):**
@@ -199,7 +201,10 @@ You can customize various aspects of the project by modifying the configuration 
 To modify the web interface:
 1. Edit the HTML file in `data/html/index.html`
 2. The changes will be automatically incorporated during the next build
-3. No need to upload filesystem images as the HTML is embedded in the firmware
+3. The HTML content is automatically compressed with gzip during the build process
+4. The compressed content is embedded directly in the firmware as a byte array
+5. No need to upload filesystem images as the HTML is embedded in the firmware
+6. The web server serves the compressed content with appropriate headers for browser decompression
 
 ## Usage
 

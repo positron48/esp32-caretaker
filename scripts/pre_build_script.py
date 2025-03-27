@@ -1,22 +1,37 @@
 Import("env")
 import os
+import gzip
 from SCons.Builder import Builder
 
 def generate_html_header(target, source, env):
-    """Convert HTML to header file"""
+    """Convert HTML to header file with gzip compression"""
     html_file = str(source[0])
     header_file = str(target[0])
     
-    print(f"Converting {html_file} to {header_file}")
+    print(f"Converting and compressing {html_file} to {header_file}")
     
+    # Read the HTML content
     with open(html_file, 'r') as f:
         content = f.read()
     
+    # Compress with gzip
+    compressed_content = gzip.compress(content.encode('utf-8'))
+    
+    # Write the header file with compressed content as byte array
     with open(header_file, 'w') as f:
         f.write('#pragma once\n\n')
-        f.write('const char INDEX_HTML[] PROGMEM = R"rawliteral(\n')
-        f.write(content)
-        f.write(')rawliteral";\n')
+        f.write(f'const size_t INDEX_HTML_SIZE = {len(compressed_content)};\n\n')
+        f.write('const uint8_t INDEX_HTML[] PROGMEM = {\n    ')
+        
+        # Convert binary data to hex representation
+        byte_count = 0
+        for byte in compressed_content:
+            f.write(f"0x{byte:02x}, ")
+            byte_count += 1
+            if byte_count % 12 == 0:  # Format with 12 bytes per line
+                f.write('\n    ')
+        
+        f.write('\n};\n')
     
     return None
 
