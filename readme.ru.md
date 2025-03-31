@@ -21,9 +21,9 @@
 * **Мониторинг ресурсов:** Опциональная статистика задач FreeRTOS для анализа производительности
 * **Переключение функций:** Легкое включение/отключение функций в конфигурации
 
-![sliders](/home/ubuntu/Arduino/ESP32-CAM_caretaker/screenshots/sliders.png)
+![sliders](screenshots/sliders.png)
 
-![bt](/home/ubuntu/Arduino/ESP32-CAM_caretaker/screenshots/bt.png)
+![bt](screenshots/bt.png)
 
 ## Архитектура
 

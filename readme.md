@@ -21,9 +21,9 @@ This project implements a remote-controlled robot using an ESP32-CAM board. It f
 * **Resource Monitoring:** Optional FreeRTOS task statistics for performance analysis
 * **Feature Toggles:** Easily enable/disable features in configuration
 
-![sliders](/home/ubuntu/Arduino/ESP32-CAM_caretaker/screenshots/sliders.png)
+![sliders](screenshots/sliders.png)
 
-![bt](/home/ubuntu/Arduino/ESP32-CAM_caretaker/screenshots/bt.png)
+![bt](screenshots/bt.png)
 
 ## Architecture
 
