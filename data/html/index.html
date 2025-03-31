@@ -1403,6 +1403,44 @@
         // Call initialization on page load
         initializeSettings();
 
+        // Check for disabled features on page load
+        function checkDisabledFeatures() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.disabledFeatures && Array.isArray(data.disabledFeatures)) {
+                        // Hide LED controls if LED control is disabled
+                        if (data.disabledFeatures.includes('led_control')) {
+                            // Hide LED slider in settings
+                            const ledContainer = ledSlider.closest('.settings-item');
+                            if (ledContainer) {
+                                ledContainer.style.display = 'none';
+                            }
+                            console.log('LED control is disabled in this firmware build');
+                        }
+                        
+                        // Hide Bluetooth controls if Bluetooth is disabled
+                        if (data.disabledFeatures.includes('bluetooth')) {
+                            // Hide Bluetooth button
+                            if (btToggle) {
+                                btToggle.style.display = 'none';
+                            }
+                            // Hide Bluetooth status
+                            if (btStatus) {
+                                btStatus.style.display = 'none';
+                            }
+                            console.log('Bluetooth is disabled in this firmware build');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to fetch disabled features:', error);
+                });
+        }
+
+        // Run disabled features check on page load
+        checkDisabledFeatures();
+
         // LED slider handling
         ledSlider.addEventListener('input', function() {
             const value = parseInt(this.value);

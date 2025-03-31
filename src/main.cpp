@@ -38,7 +38,7 @@ bool initCamera() {
     // Init with high specs to pre-allocate larger buffers
     if (psramFound()) {
         Serial.println("PSRAM found, using higher resolution");
-        config.frame_size = FRAMESIZE_XGA; // Higher resolution for initialization
+        config.frame_size = FRAMESIZE_HVGA; // Higher resolution for initialization
         config.jpeg_quality = 10; // Better quality
         config.fb_count = 2;
     } else {
