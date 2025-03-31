@@ -1,5 +1,6 @@
 #include "stream_task.h"
 #include "stream_constants.h"
+#include "config.h"
 #include <ArduinoJson.h>
 
 // Initialize global variables
@@ -284,9 +285,24 @@ void handleStreamStatus() {
     }
     
     // Create JSON response
-    StaticJsonDocument<200> doc;
+    StaticJsonDocument<256> doc;
     doc["streaming"] = isStreaming;
     doc["fps"] = fps;
+    
+    // Add disabled features array
+    JsonArray disabledFeatures = doc.createNestedArray("disabledFeatures");
+    
+    #if !FEATURE_BLUETOOTH_ENABLED
+    disabledFeatures.add("bluetooth");
+    #endif
+    
+    #if !FEATURE_LED_CONTROL_ENABLED
+    disabledFeatures.add("led_control");
+    #endif
+    
+    #if !FEATURE_TASK_STATS_ENABLED
+    disabledFeatures.add("task_stats");
+    #endif
     
     String response;
     serializeJson(doc, response);

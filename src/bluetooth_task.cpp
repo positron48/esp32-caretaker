@@ -1,5 +1,9 @@
 #include "bluetooth_task.h"
 #include <Arduino.h>
+#include "config.h"
+
+#if FEATURE_BLUETOOTH_ENABLED
+
 #include <NimBLEDevice.h>
 #include "joystick_config.h"
 #include "motor_control.h"
@@ -381,4 +385,5 @@ void TaskBluetooth(void *pvParameters) {
         // Добавим небольшую задержку для экономии ресурсов
         vTaskDelay(100 / portTICK_PERIOD_MS);  // Уменьшаем задержку для более быстрой реакции
     }
-} 
+}
+#endif // FEATURE_BLUETOOTH_ENABLED 

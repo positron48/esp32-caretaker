@@ -7,6 +7,7 @@
 #include <esp_camera.h>
 #include "motor_control.h"
 #include "bluetooth_task.h"
+#include "config.h"
 
 // LED pin
 const int ledPin = LED_PIN;
@@ -78,10 +79,13 @@ void setup() {
         return;
     }
 
-    // Initialize LED
+    // Initialize LED if enabled
+    #if FEATURE_LED_CONTROL_ENABLED
     ledcSetup(LED_CHANNEL, LED_FREQUENCY, LED_RESOLUTION);
     ledcAttachPin(ledPin, LED_CHANNEL);
     ledcWrite(LED_CHANNEL, 0); // Start with LED off
+    Serial.println("LED control initialized");
+    #endif
 
     // Initialize camera
     if(!initCamera()) {
@@ -92,13 +96,17 @@ void setup() {
     // Initialize motor control
     initMotors();
 
-    // Initialize BLE
+    // Initialize BLE if enabled
+    #if FEATURE_BLUETOOTH_ENABLED
     initBluetooth();
+    Serial.println("Bluetooth initialized");
+    #endif
 
     // Initialize WiFi
     initWiFi();
 
-    // Create log task on core 1
+    // Create log task on core 1 if enabled
+    #if FEATURE_TASK_STATS_ENABLED
     xTaskCreatePinnedToCore(
         TaskLog,
         "Log",
@@ -108,6 +116,8 @@ void setup() {
         NULL,
         1
     );
+    Serial.println("Task stats logging enabled");
+    #endif
 
     // Create HTTP server task on core 0
     xTaskCreatePinnedToCore(
@@ -120,7 +130,8 @@ void setup() {
         0
     );
     
-    // Create Bluetooth task on core 0
+    // Create Bluetooth task on core 0 if enabled
+    #if FEATURE_BLUETOOTH_ENABLED
     xTaskCreatePinnedToCore(
         TaskBluetooth,
         "Bluetooth",
@@ -130,6 +141,7 @@ void setup() {
         NULL,
         0
     );
+    #endif
 }
 
 void loop() {

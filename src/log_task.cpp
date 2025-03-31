@@ -1,5 +1,9 @@
 #include "log_task.h"
 #include <Arduino.h>
+#include "config.h"
+
+#if FEATURE_TASK_STATS_ENABLED
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -29,4 +33,5 @@ void TaskLog(void *pvParameters) {
 
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
-} 
+}
+#endif // FEATURE_TASK_STATS_ENABLED 

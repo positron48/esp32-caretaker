@@ -1,3 +1,8 @@
+// Feature toggles - Set to 0 to disable the feature, 1 to enable
+#define FEATURE_BLUETOOTH_ENABLED 1
+#define FEATURE_LED_CONTROL_ENABLED 1
+#define FEATURE_TASK_STATS_ENABLED 1
+
 // Motor Control configuration
 #define MOTOR_LEFT_IN1 12  // in1
 #define MOTOR_LEFT_IN2 13  // in2

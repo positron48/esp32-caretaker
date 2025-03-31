@@ -4,6 +4,13 @@
 #include "ArduinoJson.h"
 #include "html_content.h"
 #include "bluetooth_task.h"
+#include "config.h"
+
+// Global variables for feature state
+#if !FEATURE_BLUETOOTH_ENABLED
+// When feature is disabled, define it here since bluetooth_task.cpp might not be compiled
+bool btControlEnabled = false;
+#endif
 
 void TaskHttpServer(void* parameter) {
 
@@ -20,7 +27,8 @@ void TaskHttpServer(void* parameter) {
         server.send_P(200, "text/html", (const char*)INDEX_HTML, INDEX_HTML_SIZE);
     });
 
-    // LED control endpoint
+    // LED control endpoint - conditionally register if LED control is enabled
+    #if FEATURE_LED_CONTROL_ENABLED
     server.on("/led", HTTP_GET, [&server]() {
         int pwmValue = 0;
         
@@ -37,6 +45,7 @@ void TaskHttpServer(void* parameter) {
         ledcWrite(LED_CHANNEL, pwmValue);
         server.send(200, "text/plain", "OK");
     });
+    #endif
 
     // Quality control endpoint with new parameters for resolution and compression
     server.on("/quality", HTTP_GET, [&server]() {
@@ -183,10 +192,12 @@ void TaskHttpServer(void* parameter) {
             }
 
             // Обработка команд управления - только если BT не активен или не подключен
+            #if FEATURE_BLUETOOTH_ENABLED
             if (btControlEnabled && bleConnected) {
                 server.send(200, "text/plain", "BT control active");
                 return;
             }
+            #endif
 
             // Обработка команд управления
             if (strcmp(mode, "joystick") == 0) {
@@ -207,7 +218,8 @@ void TaskHttpServer(void* parameter) {
         }
     });
     
-    // Bluetooth control endpoint
+    // Bluetooth control endpoint - conditionally register if Bluetooth is enabled
+    #if FEATURE_BLUETOOTH_ENABLED
     server.on("/bt", HTTP_GET, [&server]() {
         String state = server.arg("state");
         
@@ -252,6 +264,7 @@ void TaskHttpServer(void* parameter) {
         serializeJson(doc, response);
         server.send(200, "application/json", response);
     });
+    #endif
 
     setupStreamTask(&server);
 
