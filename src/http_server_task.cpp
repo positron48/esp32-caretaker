@@ -1,17 +1,11 @@
 #include "http_server_task.h"
 #include "stream_task.h"
-#include "SPIFFS.h"
 #include "motor_control.h"
 #include "ArduinoJson.h"
 #include "html_content.h"
 #include "bluetooth_task.h"
 
 void TaskHttpServer(void* parameter) {
-    // Initialize SPIFFS
-    if(!SPIFFS.begin(true)) {
-        Serial.println("An error has occurred while mounting SPIFFS");
-        return;
-    }
 
     // Initialize motors
     initMotors();

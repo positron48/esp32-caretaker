@@ -26,6 +26,7 @@ void initStreamHandler(WebServer* server);
 void cleanupStreamHandler();
 void handleStartStream();
 void handleStopStream();
+void handleStreamStatus();
 void streamTask(void* parameter);
 esp_err_t captureFrame();
 void setupStreamTask(WebServer* server);

@@ -84,6 +84,18 @@
             display: none;
         }
 
+        .stream-status {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
         .controls-overlay {
             position: absolute;
             z-index: 2;
@@ -623,8 +635,8 @@
             
             <div class="settings-section">
                 <div class="settings-slider-container">
-                    <input type="range" min="10" max="64" value="12" class="settings-slider" id="quality-slider">
-                    <div class="settings-slider-value" id="quality-value">12 (Higher quality)</div>
+                    <input type="range" min="8" max="64" value="12" class="settings-slider" id="quality-slider">
+                    <div class="settings-slider-value" id="quality-value">12</div>
                 </div>
             </div>
             
@@ -652,8 +664,18 @@
                     <div class="settings-slider-value" id="led-value">LED: Off</div>
                 </div>
             </div>
+            
+            <div class="settings-section">
+                <button class="button" id="show-fps-toggle">
+                    <span class="material-icons" style="margin-right: 5px; font-size: 18px;">speed</span>
+                    <span>Show FPS</span>
+                </button>
+            </div>
         </div>
     </div>
+
+    <!-- Stream status display -->
+    <div class="stream-status" id="stream-status" style="display: none;">Initializing...</div>
 
     <script>
         const streamImg = document.getElementById('stream');
@@ -706,6 +728,8 @@
         let btPollingInterval = 2000; // 2 секунды по умолчанию
         let btConnected = false; // Флаг состояния подключения
         let isBtActive = false;  // Флаг активности Bluetooth
+        let showFps = false;     // Flag to control FPS display
+        let statusUpdateInterval = null; // For status polling
 
         // Settings panel toggle
         function toggleSettingsPanel() {
@@ -772,6 +796,9 @@
             streamToggle.innerHTML = '<span class="material-icons">stop</span>';
             streamToggle.classList.add('active');
             showStatus('Starting stream...');
+            
+            // Start status updates
+            startStatusUpdates();
 
             streamImg.onerror = function() {
                 if (!isStoppingStream) {
@@ -781,6 +808,7 @@
                     isStreaming = false;
                     streamToggle.innerHTML = '<span class="material-icons">play_arrow</span>';
                     streamToggle.classList.remove('active');
+                    stopStatusUpdates();
                 }
             };
         }
@@ -796,6 +824,7 @@
                     streamToggle.innerHTML = '<span class="material-icons">play_arrow</span>';
                     streamToggle.classList.remove('active');
                     showStatus('Stream stopped');
+                    stopStatusUpdates();
                 })
                 .catch(error => {
                     showStatus('Failed to stop stream: ' + error, true);
@@ -1166,6 +1195,11 @@
         checkBluetoothStatus();
 
         function checkBluetoothStatus() {
+            // Don't check BT status if it's disabled
+            if (!isBtActive) {
+                return;
+            }
+            
             fetch('/bt/status')
                 .then(response => response.json())
                 .then(data => {
@@ -1269,6 +1303,9 @@
                             if (slidersContainer) slidersContainer.style.display = 'none';
                             
                             // Удаляем обращение к несуществующему элементу
+                            
+                            // Start polling BT status
+                            checkBluetoothStatus();
                         } else {
                             // Показываем соответствующие элементы управления при выключении BT
                             const joystickContainer = document.querySelector('.joystick-container');
@@ -1292,8 +1329,10 @@
                         // Обновляем кнопку BT
                         updateButtonUI();
                         
-                        // После включения/выключения сразу проверяем статус
-                        setTimeout(checkBluetoothStatus, 500);
+                        // После включения/выключения сразу проверяем статус только если BT включен
+                        if (isBtActive) {
+                            setTimeout(checkBluetoothStatus, 500);
+                        }
                     }
                 })
                 .catch(error => {
@@ -1377,15 +1416,12 @@
         });
 
         function updateLedValue(value) {
-            let status = 'Off';
-            
-            if (value > 0 && value <= 50) {
-                status = value + '% (Mid)';
-            } else if (value > 50) {
-                status = value + '% (High)';
+            ledBrightness = value;
+            if (value === 0) {
+                ledValue.textContent = "LED: Off";
+            } else {
+                ledValue.textContent = `LED: ${value}%`;
             }
-            
-            ledValue.textContent = 'LED: ' + status;
         }
 
         function sendLedValue(value) {
@@ -1567,6 +1603,79 @@
                 sendLedValue(value);
             }
         );
+
+        // Stream status functions
+        function startStatusUpdates() {
+            // Clear any existing interval
+            stopStatusUpdates();
+            
+            // Display the status element
+            document.getElementById('stream-status').style.display = showFps ? 'block' : 'none';
+            
+            // Set new interval - poll every 2 seconds
+            statusUpdateInterval = setInterval(fetchStreamStatus, 2000);
+        }
+        
+        function stopStatusUpdates() {
+            if (statusUpdateInterval) {
+                clearInterval(statusUpdateInterval);
+                statusUpdateInterval = null;
+            }
+            document.getElementById('stream-status').style.display = 'none';
+        }
+        
+        function fetchStreamStatus() {
+            if (!showFps) {
+                document.getElementById('stream-status').style.display = 'none';
+                return;
+            }
+            
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusEl = document.getElementById('stream-status');
+                    if (data.streaming) {
+                        statusEl.textContent = `FPS: ${data.fps.toFixed(1)}`;
+                        statusEl.style.display = 'block';
+                    } else {
+                        statusEl.textContent = 'Stream inactive';
+                        statusEl.style.display = showFps ? 'block' : 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to fetch stream status:', error);
+                });
+        }
+        
+        // FPS Display toggle
+        const fpsBtnToggle = document.getElementById('show-fps-toggle');
+        
+        fpsBtnToggle.addEventListener('click', function() {
+            showFps = !showFps;
+            updateFpsButtonUI();
+            
+            const statusEl = document.getElementById('stream-status');
+            
+            if (showFps) {
+                statusEl.style.display = 'block';
+                if (!statusUpdateInterval && isStreaming) {
+                    startStatusUpdates();
+                }
+            } else {
+                statusEl.style.display = 'none';
+            }
+        });
+        
+        function updateFpsButtonUI() {
+            if (showFps) {
+                fpsBtnToggle.classList.add('active');
+            } else {
+                fpsBtnToggle.classList.remove('active');
+            }
+        }
+        
+        // Initialize UI for FPS button
+        updateFpsButtonUI();
     </script>
 </body>
 </html>

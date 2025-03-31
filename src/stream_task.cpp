@@ -1,5 +1,6 @@
 #include "stream_task.h"
 #include "stream_constants.h"
+#include <ArduinoJson.h>
 
 // Initialize global variables
 bool isStreaming = false;
@@ -268,8 +269,33 @@ void streamTask(void* parameter) {
     vTaskDelete(nullptr);
 }
 
+void handleStreamStatus() {
+    if (!streamServer) {
+        return;
+    }
+    
+    // Calculate current FPS based on the filter's value
+    float fps = 0;
+    if (ra_filter.count > 0) {
+        uint32_t avg_frame_time = ra_filter.sum / ra_filter.count;
+        if (avg_frame_time > 0) {
+            fps = 1000.0 / avg_frame_time;
+        }
+    }
+    
+    // Create JSON response
+    StaticJsonDocument<200> doc;
+    doc["streaming"] = isStreaming;
+    doc["fps"] = fps;
+    
+    String response;
+    serializeJson(doc, response);
+    streamServer->send(200, "application/json", response);
+}
+
 void setupStreamTask(WebServer* server) {
     initStreamHandler(server);
     server->on("/stream", HTTP_GET, handleStartStream);
     server->on("/stopstream", HTTP_GET, handleStopStream);
+    server->on("/status", HTTP_GET, handleStreamStatus);
 } 
