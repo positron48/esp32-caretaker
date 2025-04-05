@@ -23,14 +23,6 @@
             margin: 0;
             padding: 0;
             -webkit-tap-highlight-color: transparent;
-            touch-action: none !important;
-            -ms-touch-action: none !important;
-            -webkit-touch-callout: none !important;
-            -webkit-user-select: none !important;
-            -moz-user-select: none !important;
-            -ms-user-select: none !important;
-            user-select: none !important;
-            -webkit-overflow-scrolling: none !important;
         }
 
         body { 
@@ -39,8 +31,8 @@
             min-height: 100vh;
             overflow: hidden;
             color: var(--text-color);
-            touch-action: none !important;
-            -ms-touch-action: none !important;
+            touch-action: none;
+            -ms-touch-action: none;
             overscroll-behavior: none !important;
             position: fixed;
             width: 100%;
@@ -397,79 +389,56 @@
             padding: 20px;
             overflow-y: auto;
             box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
+            touch-action: pan-y !important;
+            -ms-touch-action: pan-y !important;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
         
+        /* Fix scrolling for settings panel */
         .settings-panel.active {
             left: 0;
+            pointer-events: auto;
         }
         
-        .settings-close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #fff;
-            opacity: 0.7;
+        .settings-panel input, 
+        .settings-panel select,
+        .settings-panel button {
+            touch-action: auto;
+            pointer-events: auto;
         }
         
-        .settings-close:hover {
-            opacity: 1;
-        }
-        
-        .settings-title {
-            font-size: 18px;
-            margin-bottom: 20px;
-            font-weight: bold;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            padding-bottom: 10px;
-        }
-        
-        .settings-section {
-            margin-bottom: 25px;
-        }
-        
-        .settings-option {
-            margin-bottom: 20px;
-        }
-        
-        .settings-slider-container {
+        .select-wrapper {
+            position: relative;
             width: 100%;
-            margin: 10px 0;
+            margin-bottom: 10px;
+            touch-action: manipulation;
+            z-index: 10;
         }
         
-        .settings-slider {
+        .select-wrapper select {
             width: 100%;
+            padding: 8px;
+            appearance: none;
             -webkit-appearance: none;
-            height: 6px;
-            border-radius: 3px;
-            background: rgba(255, 255, 255, 0.2);
+            -moz-appearance: none;
+            background-color: #444;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
             outline: none;
         }
         
-        .settings-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            cursor: pointer;
-        }
-        
-        .settings-slider::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            cursor: pointer;
-            border: none;
-        }
-        
-        .settings-slider-value {
-            text-align: center;
-            margin-top: 5px;
+        .select-wrapper::after {
+            content: '\25BC';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #999;
             font-size: 12px;
-            opacity: 0.7;
         }
         
         .settings-select {
@@ -479,10 +448,18 @@
             padding: 6px 10px;
             border-radius: 4px;
             width: 100%;
+            -webkit-appearance: menulist;
+            -moz-appearance: menulist;
+            appearance: menulist;
+            cursor: pointer;
+            z-index: 1002;
+            pointer-events: auto !important;
+            touch-action: auto !important;
         }
         
         .settings-select option {
             background-color: #333;
+            color: white;
         }
         
         /* Control mode tab selector */
@@ -556,10 +533,126 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
             display: none;
+            touch-action: auto; /* Enable touch events on overlay */
         }
         
         .overlay.active {
             display: block;
+        }
+
+        .settings-slider {
+            touch-action: auto !important;
+            -ms-touch-action: auto !important;
+        }
+        
+        .settings-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #fff;
+            opacity: 0.7;
+            z-index: 1001;
+        }
+        
+        .settings-close:hover {
+            opacity: 1;
+        }
+        
+        .settings-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 10px;
+        }
+        
+        .settings-section {
+            margin-bottom: 25px;
+        }
+        
+        .settings-option {
+            margin-bottom: 20px;
+        }
+        
+        .settings-slider-container {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .settings-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+        
+        .settings-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+        }
+        
+        .settings-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .settings-slider-value {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* Prevent scrolling conflicts on mobile */
+        @media (max-width: 768px) {
+            .settings-panel {
+                top: 0;
+                bottom: 0;
+                width: 80%;
+                max-width: 300px;
+                padding: 15px;
+                overflow-y: auto;
+                max-height: 80vh;
+                padding-bottom: 40px; /* Extra padding to ensure scrollable content is reachable */
+            }
+            
+            .select-wrapper {
+                margin-bottom: 15px;
+            }
+            
+            .select-wrapper select {
+                font-size: 16px; /* iOS требует минимум 16px, чтобы не масштабировать */
+                height: 40px; /* Увеличиваем область касания */
+                padding: 10px;
+            }
+            
+            /* Увеличиваем расстояние между элементами для легкости тапа */
+            .settings-panel .slider-container {
+                margin-bottom: 20px;
+            }
+            
+            /* Улучшаем видимость активного состояния */
+            .select-wrapper select:focus {
+                border-color: #0984e3;
+                box-shadow: 0 0 0 2px rgba(9, 132, 227, 0.4);
+            }
+            
+            .select-wrapper::after {
+                font-size: 16px;
+                right: 15px;
+            }
         }
     </style>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -616,21 +709,23 @@
             <div class="settings-title">Settings</div>
             
             <div class="settings-section">
-                <select id="resolution-select" class="settings-select">
-                    <option value="QQVGA">QQVGA (160x120)</option>
-                    <option value="QCIF">QCIF (176x144)</option>
-                    <option value="HQVGA">HQVGA (240x176)</option>
-                    <option value="240X240">240X240 (240x240)</option>
-                    <option value="QVGA">QVGA (320x240)</option>
-                    <option value="CIF">CIF (400x296)</option>
-                    <option value="HVGA">HVGA (480x320)</option>
-                    <option value="VGA">VGA (640x480)</option>
-                    <option value="SVGA">SVGA (800x600)</option>
-                    <option value="XGA">XGA (1024x768)</option>
-                    <option value="HD">HD (1280x720)</option>
-                    <option value="SXGA">SXGA (1280x1024)</option>
-                    <option value="UXGA">UXGA (1600x1200)</option>
-                </select>
+                <div class="select-wrapper">
+                    <select id="resolution-select" class="settings-select">
+                        <option value="QQVGA">QQVGA (160x120)</option>
+                        <option value="QCIF">QCIF (176x144)</option>
+                        <option value="HQVGA">HQVGA (240x176)</option>
+                        <option value="240X240">240X240 (240x240)</option>
+                        <option value="QVGA">QVGA (320x240)</option>
+                        <option value="CIF">CIF (400x296)</option>
+                        <option value="HVGA">HVGA (480x320)</option>
+                        <option value="VGA">VGA (640x480)</option>
+                        <option value="SVGA">SVGA (800x600)</option>
+                        <option value="XGA">XGA (1024x768)</option>
+                        <option value="HD">HD (1280x720)</option>
+                        <option value="SXGA">SXGA (1280x1024)</option>
+                        <option value="UXGA">UXGA (1600x1200)</option>
+                    </select>
+                </div>
             </div>
             
             <div class="settings-section">
@@ -731,6 +826,16 @@
         let showFps = false;     // Flag to control FPS display
         let statusUpdateInterval = null; // For status polling
 
+        // Prevent default behavior on document touchmove except for settings panel
+        document.addEventListener('touchmove', function(e) {
+            // Skip if inside settings panel
+            if (settingsPanel.classList.contains('active') && isInSettingsPanel(e.target)) {
+                return;
+            }
+            // Prevent default for everything else
+            e.preventDefault();
+        }, { passive: false });
+        
         // Settings panel toggle
         function toggleSettingsPanel() {
             settingsPanel.classList.toggle('active');
@@ -738,20 +843,60 @@
         }
 
         settingsToggle.addEventListener('click', toggleSettingsPanel);
-        settingsClose.addEventListener('click', toggleSettingsPanel);
-        settingsOverlay.addEventListener('click', toggleSettingsPanel);
-
-        // Quality slider handling
-        qualitySlider.addEventListener('input', function() {
-            const value = this.value;
-            qualityValue.textContent = value + (value < 30 ? " (Higher quality)" : " (Lower quality)");
+        settingsClose.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSettingsPanel();
         });
-
-        qualitySlider.addEventListener('change', function() {
-            const quality = this.value;
-            sendQualitySettings();
+        settingsOverlay.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleSettingsPanel();
         });
-
+        
+        // Add touch event handlers for mobile devices
+        settingsClose.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSettingsPanel();
+        }, { passive: false });
+        
+        settingsOverlay.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            toggleSettingsPanel();
+        }, { passive: false });
+        
+        // Settings panel specific event handling
+        settingsPanel.addEventListener('touchstart', function(e) {
+            // Allow touchstart inside the panel without stopping propagation
+        }, { passive: true });
+        
+        settingsPanel.addEventListener('touchmove', function(e) {
+            // Проверяем, не находится ли прикосновение в области select
+            if (e.target.closest('.select-wrapper') || e.target.tagName === 'SELECT') {
+                return; // Не блокируем события для select
+            }
+            // Allow scrolling within the panel
+            e.stopPropagation();
+        }, { passive: true });
+        
+        // Override global touch handling for settings panel
+        function isInSettingsPanel(element) {
+            while (element) {
+                if (element === settingsPanel) return true;
+                element = element.parentElement;
+            }
+            return false;
+        }
+        
+        // Ensure select element works properly on mobile
+        resolutionSelect.addEventListener('touchstart', function(e) {
+            // Allow touch events for the select
+        }, { passive: true });
+        
+        resolutionSelect.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        
         resolutionSelect.addEventListener('change', function() {
             sendQualitySettings();
         });
@@ -919,28 +1064,45 @@
 
         // Mouse events for joystick
         stick.addEventListener('mousedown', (e) => {
+            // Skip if the settings panel is active
+            if (settingsPanel.classList.contains('active')) return;
+            
             e.preventDefault();
             isDragging = true;
         });
         
         document.addEventListener('mousemove', (e) => {
+            // Skip if the settings panel is active
+            if (settingsPanel.classList.contains('active')) return;
+            
             e.preventDefault();
             handleJoystickMove(e);
         });
         
         document.addEventListener('mouseup', (e) => {
+            // Skip if the settings panel is active
+            if (settingsPanel.classList.contains('active')) return;
+            
             e.preventDefault();
             resetJoystick(true);
         });
 
         // Touch events for joystick
         stick.addEventListener('touchstart', (e) => {
+            // Skip if the settings panel is active
+            if (settingsPanel.classList.contains('active')) return;
+            
             e.preventDefault();
             isDragging = true;
             handleJoystickMove(e.touches[0]);
         }, { passive: false });
         
         document.addEventListener('touchmove', (e) => {
+            // Skip if inside settings panel
+            if (settingsPanel.classList.contains('active') && isInSettingsPanel(e.target)) {
+                return;
+            }
+            
             e.preventDefault();
             if (isDragging && e.touches.length > 0) {
                 handleJoystickMove(e.touches[0]);
@@ -948,11 +1110,21 @@
         }, { passive: false });
         
         document.addEventListener('touchend', (e) => {
+            // Skip if the settings panel is active
+            if (settingsPanel.classList.contains('active') && isInSettingsPanel(e.target)) {
+                return;
+            }
+            
             e.preventDefault();
             resetJoystick(true);
         }, { passive: false });
 
         document.addEventListener('touchcancel', (e) => {
+            // Skip if the settings panel is active
+            if (settingsPanel.classList.contains('active') && isInSettingsPanel(e.target)) {
+                return;
+            }
+            
             e.preventDefault();
             resetJoystick(true);
         }, { passive: false });
@@ -960,8 +1132,31 @@
         // Обработчики для кнопок
         streamToggle.addEventListener('click', toggleStream);
 
+        // FPS Display toggle
+        const fpsBtnToggle = document.getElementById('show-fps-toggle');
+        
+        function toggleFpsDisplay() {
+            showFps = !showFps;
+            updateFpsButtonUI();
+            
+            const statusEl = document.getElementById('stream-status');
+            
+            if (showFps) {
+                statusEl.style.display = 'block';
+                if (!statusUpdateInterval && isStreaming) {
+                    startStatusUpdates();
+                }
+            } else {
+                statusEl.style.display = 'none';
+            }
+        }
+        
+        fpsBtnToggle.addEventListener('click', function() {
+            toggleFpsDisplay();
+        });
+
         // Добавляем обработку тач-событий для кнопок
-        [streamToggle, fullscreenButton, settingsToggle, btToggle, joystickTab, slidersTab].forEach(button => {
+        [streamToggle, fullscreenButton, settingsToggle, btToggle, joystickTab, slidersTab, fpsBtnToggle].forEach(button => {
             if (button) {
                 button.addEventListener('touchstart', (e) => {
                     e.preventDefault();
@@ -1302,8 +1497,6 @@
                             if (joystickContainer) joystickContainer.style.display = 'none';
                             if (slidersContainer) slidersContainer.style.display = 'none';
                             
-                            // Удаляем обращение к несуществующему элементу
-                            
                             // Start polling BT status
                             checkBluetoothStatus();
                         } else {
@@ -1487,6 +1680,23 @@
             }
         });
 
+        // Обработчики тач-событий для вкладок типа управления
+        joystickTab.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isJoystickMode) {
+                toggleControlMode('joystick');
+            }
+        }, { passive: false });
+
+        slidersTab.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (isJoystickMode) {
+                toggleControlMode('sliders');
+            }
+        }, { passive: false });
+
         function toggleControlMode(mode) {
             isJoystickMode = mode === 'joystick';
             
@@ -1567,12 +1777,14 @@
                 isActive = true;
                 updateSlider(e.clientX);
                 e.preventDefault();
+                e.stopPropagation();
             }, { passive: false });
             
             document.addEventListener('mousemove', function(e) {
                 if (isActive) {
                     updateSlider(e.clientX);
                     e.preventDefault();
+                    e.stopPropagation();
                 }
             }, { passive: false });
             
@@ -1589,8 +1801,8 @@
                     activeTouch = e.touches[0].identifier;
                     updateSlider(e.touches[0].clientX);
                 }
-                e.preventDefault();
-            }, { passive: false });
+                e.stopPropagation();
+            }, { passive: true });
             
             document.addEventListener('touchmove', function(e) {
                 if (!isActive) return;
@@ -1600,7 +1812,11 @@
                     const touch = e.touches[i];
                     if (touch.identifier === activeTouch) {
                         updateSlider(touch.clientX);
-                        e.preventDefault();
+                        if (isInSettingsPanel(sliderElement)) {
+                            e.stopPropagation();
+                        } else {
+                            e.preventDefault();
+                        }
                         break;
                     }
                 }
@@ -1685,24 +1901,6 @@
                 });
         }
         
-        // FPS Display toggle
-        const fpsBtnToggle = document.getElementById('show-fps-toggle');
-        
-        fpsBtnToggle.addEventListener('click', function() {
-            showFps = !showFps;
-            updateFpsButtonUI();
-            
-            const statusEl = document.getElementById('stream-status');
-            
-            if (showFps) {
-                statusEl.style.display = 'block';
-                if (!statusUpdateInterval && isStreaming) {
-                    startStatusUpdates();
-                }
-            } else {
-                statusEl.style.display = 'none';
-            }
-        });
         
         function updateFpsButtonUI() {
             if (showFps) {
@@ -1714,6 +1912,71 @@
         
         // Initialize UI for FPS button
         updateFpsButtonUI();
+
+        function initMobileSelectFix() {
+            // Функция для фиксации работы селекта на мобильных устройствах
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const selectWrapper = document.querySelector('.select-wrapper');
+            
+            if (isMobile) {
+                // Добавляем специальный обработчик тача для селекта
+                resolutionSelect.addEventListener('touchstart', function(event) {
+                    event.stopPropagation();
+                }, { passive: false });
+                
+                resolutionSelect.addEventListener('touchend', function(event) {
+                    event.stopPropagation();
+                }, { passive: false });
+                
+                resolutionSelect.addEventListener('touchcancel', function(event) {
+                    event.stopPropagation();
+                }, { passive: false });
+                
+                // Добавляем обработчик для контейнера
+                if (selectWrapper) {
+                    selectWrapper.addEventListener('click', function(event) {
+                        event.stopPropagation();
+                        resolutionSelect.focus();
+                    });
+                    
+                    selectWrapper.addEventListener('touchstart', function(event) {
+                        event.stopPropagation();
+                    }, { passive: false });
+                    
+                    selectWrapper.addEventListener('touchend', function(event) {
+                        event.stopPropagation();
+                    }, { passive: false });
+                    
+                    selectWrapper.addEventListener('touchcancel', function(event) {
+                        event.stopPropagation();
+                    }, { passive: false });
+                }
+                
+                // Принудительно задаем стили
+                resolutionSelect.style.cssText += "transform: translateZ(0); -webkit-tap-highlight-color: rgba(0,0,0,0);";
+            }
+        }
+        
+        // Вызываем инициализацию
+        initMobileSelectFix();
+
+        // Добавляем обработчики для панели настроек
+        settingsPanel.addEventListener('mousedown', function(event) {
+            if (event.target.closest('.select-wrapper') || event.target.tagName === 'SELECT') {
+                return; // Позволяем кликать по select и его контейнеру без препятствий
+            }
+            startY = event.clientY;
+            isScrolling = false;
+        });
+
+        // Добавляем обработчики тач событий для панели настроек
+        settingsPanel.addEventListener('touchstart', function(event) {
+            if (event.target.closest('.select-wrapper') || event.target.tagName === 'SELECT') {
+                return; // Позволяем тачи по select и его контейнеру без препятствий
+            }
+            startY = event.touches[0].clientY;
+            isScrolling = false;
+        }, { passive: false });
     </script>
 </body>
 </html>
