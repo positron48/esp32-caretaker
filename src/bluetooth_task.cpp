@@ -8,165 +8,165 @@
 #include "joystick_config.h"
 #include "motor_control.h"
 
-// Глобальные переменные для доступа из других модулей
+// Global variables for access from other modules
 JoystickData joystickData;
 bool hasNewJoystickData = false;
 bool bleConnected = false;
 bool btControlEnabled = false;
 
-// Внутренние переменные
+// Internal variables
 static bool deviceFound = false;
 static NimBLEAddress* joystickAddress = nullptr;
 static NimBLEClient* pClient = nullptr;
 static NimBLERemoteCharacteristic* joystickCharacteristic = nullptr;
 static bool serviceDiscoveryCompleted = false;
 
-// Время последнего сканирования
+// Time of last scan
 static unsigned long lastScanTime = 0;
 
-// Статус соединения для веб-интерфейса
-String btConnectionStatus = "Не активировано";
+// Connection status for web interface
+String btConnectionStatus = "Not activated";
 
-// Класс для обработки найденных устройств во время сканирования
+// Class for handling devices found during scanning
 class MyAdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
     void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
-        Serial.printf("BLE: Найдено устройство: %s\n", advertisedDevice->toString().c_str());
+        Serial.printf("BLE: Device found: %s\n", advertisedDevice->toString().c_str());
         
-        // Проверяем, совпадает ли имя устройства с искомым
+        // Check if the device name matches the one we're looking for
         if (advertisedDevice->haveName() && advertisedDevice->getName() == JOYSTICK_DEVICE_NAME) {
-            Serial.println("BLE: Обнаружен ExpressLRS Joystick!");
+            Serial.println("BLE: ExpressLRS Joystick detected!");
             deviceFound = true;
             
-            // Сохраняем адрес устройства
+            // Save the device address
             if (joystickAddress != nullptr) {
                 delete joystickAddress;
             }
             joystickAddress = new NimBLEAddress(advertisedDevice->getAddress());
             
-            // Остановка сканирования после нахождения нужного устройства
+            // Stop scanning after finding the needed device
             NimBLEDevice::getScan()->stop();
             
-            // Обновляем статус
-            btConnectionStatus = "Устройство найдено, подключение...";
+            // Update status
+            btConnectionStatus = "Device found, connecting...";
         }
     }
 };
 
-// Класс для управления подключением к серверу
+// Class for managing connection to the server
 class MyClientCallback : public NimBLEClientCallbacks {
     void onConnect(NimBLEClient* pclient) {
         bleConnected = true;
-        Serial.println("BLE: Подключено к ExpressLRS Joystick");
-        btConnectionStatus = "Подключено";
+        Serial.println("BLE: Connected to ExpressLRS Joystick");
+        btConnectionStatus = "Connected";
     }
 
     void onDisconnect(NimBLEClient* pclient) {
         bleConnected = false;
-        Serial.println("BLE: Соединение с ExpressLRS Joystick разорвано");
+        Serial.println("BLE: Connection to ExpressLRS Joystick lost");
         joystickCharacteristic = nullptr;
         serviceDiscoveryCompleted = false;
-        btConnectionStatus = "Соединение разорвано";
+        btConnectionStatus = "Connection lost";
     }
 
-    // Обработка авторизации
+    // Handling authorization
     bool onConnParamsUpdateRequest(NimBLEClient* pclient, const ble_gap_upd_params* params) {
-        Serial.println("BLE: Запрос на обновление параметров соединения");
+        Serial.println("BLE: Authorization request");
         return true;
     }
 
     uint32_t onPassKeyRequest() {
-        Serial.println("BLE: Запрос на ввод ключа");
-        // Возвращаем стандартный ключ (можно изменить при необходимости)
+        Serial.println("BLE: PIN request");
+        // Return standard key (can be changed if needed)
         return 123456;
     }
 
     bool onConfirmPIN(uint32_t pin) {
-        Serial.printf("BLE: Запрос на подтверждение PIN: %d\n", pin);
-        return true; // Автоматически подтверждаем PIN
+        Serial.printf("BLE: PIN confirmation request: %d\n", pin);
+        return true; // Automatically confirm PIN
     }
 };
 
-// Функция для сканирования устройств
+// Function for scanning devices
 void scanForBluetoothDevices() {
-    Serial.println("BLE: Начинаю сканирование BLE устройств...");
-    btConnectionStatus = "Сканирование...";
+    Serial.println("BLE: Starting BLE device scan...");
+    btConnectionStatus = "Scanning...";
     
     NimBLEScan* pBLEScan = NimBLEDevice::getScan();
     pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks(), true);
-    pBLEScan->setActiveScan(true); // Активное сканирование использует больше энергии, но находит устройства быстрее
+    pBLEScan->setActiveScan(true); // Active scan uses more power but finds devices faster
     pBLEScan->setInterval(100);
     pBLEScan->setWindow(99);
     
-    deviceFound = false; // Сбрасываем флаг перед новым сканированием
+    deviceFound = false; // Reset flag before new scan
     pBLEScan->start(BLE_SCAN_TIME, false);
     
-    Serial.println("BLE: Сканирование завершено");
+    Serial.println("BLE: Scan completed");
     if (!deviceFound) {
-        btConnectionStatus = "Устройство не найдено";
+        btConnectionStatus = "Device not found";
     }
     lastScanTime = millis();
 }
 
-// Функция для обнаружения сервисов и характеристик
+// Function for discovering services and characteristics
 bool discoverServicesAndCharacteristics() {
     if (!bleConnected || pClient == nullptr) {
-        Serial.println("BLE: Невозможно обнаружить сервисы - нет подключения");
+        Serial.println("BLE: Cannot discover services - no connection");
         return false;
     }
     
-    Serial.println("BLE: Начинаем обнаружение сервисов...");
-    btConnectionStatus = "Обнаружение сервисов...";
+    Serial.println("BLE: Starting service discovery...");
+    btConnectionStatus = "Service discovery...";
     
-    // Получаем список всех сервисов
+    // Get list of all services
     std::vector<NimBLERemoteService*>* services = pClient->getServices(true);
     if (services->empty()) {
-        Serial.println("BLE: Не найдено ни одного сервиса");
-        btConnectionStatus = "Сервисы не найдены";
+        Serial.println("BLE: No services found");
+        btConnectionStatus = "Services not found";
         return false;
     }
     
-    Serial.printf("BLE: Найдено %d сервисов\n", services->size());
+    Serial.printf("BLE: Found %d services\n", services->size());
     
-    // Проходим по всем сервисам
+    // Go through all services
     for (NimBLERemoteService* service : *services) {
         if (service == nullptr) continue;
         
-        Serial.printf("BLE: Сервис: %s\n", service->getUUID().toString().c_str());
+        Serial.printf("BLE: Service: %s\n", service->getUUID().toString().c_str());
         
-        // Получаем список всех характеристик сервиса
+        // Get list of all characteristics of the service
         std::vector<NimBLERemoteCharacteristic*>* characteristics = service->getCharacteristics(true);
         if (characteristics->empty()) {
-            Serial.println("  BLE: Характеристики не найдены");
+            Serial.println("  BLE: No characteristics found");
             continue;
         }
         
-        // Проходим по всем характеристикам
+        // Go through all characteristics
         for (NimBLERemoteCharacteristic* characteristic : *characteristics) {
             if (characteristic == nullptr) continue;
             
-            Serial.printf("  BLE: Характеристика: %s\n", characteristic->getUUID().toString().c_str());
-            Serial.printf("    Свойства: %s", characteristic->canRead() ? "Чтение " : "");
-            Serial.printf("%s", characteristic->canWrite() ? "Запись " : "");
-            Serial.printf("%s", characteristic->canNotify() ? "Уведомления " : "");
-            Serial.printf("%s", characteristic->canIndicate() ? "Индикация " : "");
+            Serial.printf("  BLE: Characteristic: %s\n", characteristic->getUUID().toString().c_str());
+            Serial.printf("    Properties: %s", characteristic->canRead() ? "Read " : "");
+            Serial.printf("%s", characteristic->canWrite() ? "Write " : "");
+            Serial.printf("%s", characteristic->canNotify() ? "Notifications " : "");
+            Serial.printf("%s", characteristic->canIndicate() ? "Indication " : "");
             Serial.println();
             
-            // Пытаемся найти характеристику, которая может отправлять уведомления
-            // Обычно это характеристика управления или данных джойстика
+            // Try to find a characteristic that can send notifications
+            // Usually this is the control or joystick data characteristic
             if (characteristic->canNotify() && joystickCharacteristic == nullptr) {
                 joystickCharacteristic = characteristic;
-                Serial.println("BLE: Найдена подходящая характеристика для джойстика");
+                Serial.println("BLE: Found suitable characteristic for joystick");
                 
-                // Регистрируем колбэк для обработки уведомлений
+                // Register callback for handling notifications
                 if(joystickCharacteristic->subscribe(true, 
                     [](NimBLERemoteCharacteristic* pBLERemoteCharacteristic, 
                        uint8_t* pData, 
                        size_t length, 
                        bool isNotify) {
                         
-                        // Обрабатываем полученные данные без вывода в консоль
+                        // Process received data without output to console
                         if (length >= 14) {
-                            // Извлекаем сырые данные без преобразований
+                            // Extract raw data without conversions
                             int16_t rawLY = (pData[11] << 8) | pData[10];
                             int16_t rawLX = (pData[13] << 8) | pData[12];
                             int16_t rawRX = (pData[3] << 8) | pData[2];
@@ -176,7 +176,7 @@ bool discoverServicesAndCharacteristics() {
                                               ((uint32_t)pData[7] << 8) | 
                                               pData[6];
                             
-                            // Минимально необходимые данные для работы системы
+                            // Minimum necessary data for system operation
                             joystickData.x = rawLX;
                             joystickData.y = rawLY;
                             joystickData.rx = rawRX;
@@ -185,21 +185,21 @@ bool discoverServicesAndCharacteristics() {
                             hasNewJoystickData = true;
                         }
                     }, false)) {
-                    Serial.println("BLE: Подписка на уведомления настроена");
-                    btConnectionStatus = "Готов к работе";
+                    Serial.println("BLE: Notification subscription set up");
+                    btConnectionStatus = "Ready to work";
                 } else {
-                    Serial.println("BLE: Ошибка при настройке подписки на уведомления");
-                    btConnectionStatus = "Ошибка подписки на уведомления";
+                    Serial.println("BLE: Error setting up notification subscription");
+                    btConnectionStatus = "Notification subscription error";
                     joystickCharacteristic = nullptr;
                 }
             }
         }
     }
     
-    // Проверяем, нашли ли мы необходимую характеристику
+    // Check if we found the necessary characteristic
     if (joystickCharacteristic == nullptr) {
-        Serial.println("BLE: Не удалось найти подходящую характеристику для джойстика");
-        btConnectionStatus = "Не найдена характеристика джойстика";
+        Serial.println("BLE: Unable to find suitable characteristic for joystick");
+        btConnectionStatus = "Joystick characteristic not found";
         return false;
     }
     
@@ -207,15 +207,15 @@ bool discoverServicesAndCharacteristics() {
     return true;
 }
 
-// Функция подключения к джойстику
+// Function for connecting to the joystick
 bool connectToJoystick() {
     if (joystickAddress == nullptr) {
-        Serial.println("BLE: Ошибка: адрес устройства не найден");
-        btConnectionStatus = "Ошибка: адрес устройства не найден";
+        Serial.println("BLE: Error: device address not found");
+        btConnectionStatus = "Error: device address not found";
         return false;
     }
 
-    Serial.printf("BLE: Подключение к ExpressLRS Joystick (%s)...\n", joystickAddress->toString().c_str());
+    Serial.printf("BLE: Connecting to ExpressLRS Joystick (%s)...\n", joystickAddress->toString().c_str());
     
     if (pClient != nullptr) {
         if(pClient->isConnected()) {
@@ -227,41 +227,41 @@ bool connectToJoystick() {
     pClient = NimBLEDevice::createClient();
     pClient->setClientCallbacks(new MyClientCallback(), false);
     
-    // Настройки безопасности
+    // Security settings
     pClient->setConnectTimeout(10);
     
-    // Подключение к устройству
+    // Connect to the device
     if (pClient->connect(*joystickAddress)) {
-        Serial.println("BLE: Подключение успешно!");
+        Serial.println("BLE: Connection successful!");
         
-        // Обнаруживаем сервисы и характеристики
+        // Discover services and characteristics
         if (!discoverServicesAndCharacteristics()) {
-            Serial.println("BLE: Не удалось настроить работу с джойстиком");
-            btConnectionStatus = "Ошибка настройки джойстика";
+            Serial.println("BLE: Unable to set up joystick operation");
+            btConnectionStatus = "Joystick setup error";
             pClient->disconnect();
             return false;
         }
         
         return true;
     } else {
-        Serial.println("BLE: Ошибка подключения!");
-        btConnectionStatus = "Ошибка подключения";
+        Serial.println("BLE: Connection error!");
+        btConnectionStatus = "Connection error";
         return false;
     }
 }
 
-// Инициализация Bluetooth
+// Bluetooth initialization
 void initBluetooth() {
     NimBLEDevice::init("");
-    Serial.println("BLE: Инициализация выполнена");
+    Serial.println("BLE: Initialization completed");
     
-    // Настройка безопасности BLE для поддержки pairing
+    // BLE security settings for supporting pairing
     NimBLEDevice::setSecurityAuth(true, true, true);
     NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
-    Serial.println("BLE: Настройка безопасности выполнена");
+    Serial.println("BLE: Security settings completed");
 }
 
-// Отключение от Bluetooth-устройства
+// Disconnecting from Bluetooth device
 void disconnectBluetooth() {
     if (pClient != nullptr && pClient->isConnected()) {
         pClient->disconnect();
@@ -271,27 +271,27 @@ void disconnectBluetooth() {
     hasNewJoystickData = false;
     joystickCharacteristic = nullptr;
     serviceDiscoveryCompleted = false;
-    btConnectionStatus = "Отключено";
+    btConnectionStatus = "Disconnected";
 }
 
-// Получение текущего статуса Bluetooth для веб-интерфейса
+// Getting current Bluetooth status for web interface
 String getBtStatus() {
-    // Просто возвращаем текущий статус без дополнительной информации о режиме
+    // Simply return current status without additional information about mode
     return btConnectionStatus;
 }
 
 // Bluetooth task
 void TaskBluetooth(void *pvParameters) {
-    Serial.println("BLE: Запуск задачи Bluetooth");
+    Serial.println("BLE: Starting Bluetooth task");
     
     while(true) {
-        // Поиск и подключение к джойстику только если BT активирован в настройках
+        // Search and connect to joystick only if BT is enabled in settings
         if (btControlEnabled) {
-            // Сохраняем текущее время для использования в нескольких местах
+            // Save current time for use in multiple places
             unsigned long currentTime = millis();
             
             if (!bleConnected && (currentTime - lastScanTime > BLE_RESCAN_INTERVAL || lastScanTime == 0)) {
-                Serial.println("BLE: Выполняем сканирование...");
+                Serial.println("BLE: Performing scan...");
                 scanForBluetoothDevices();
                 
                 if (deviceFound) {
@@ -299,14 +299,14 @@ void TaskBluetooth(void *pvParameters) {
                 }
             }
             
-            // Обработка данных джойстика если он подключен
+            // Process joystick data if connected
             if (bleConnected && hasNewJoystickData) {
-                // Обработка будет зависеть от текущего режима управления
+                // Processing will depend on current control mode
                 if (currentControlMode == ControlMode::JOYSTICK) {
-                    // В режиме джойстика используем правый стик
+                    // In joystick mode, use right stick
                     
-                    // Преобразуем сырые значения в нормализованный диапазон [-1.0, 1.0]
-                    // Для правого стика (rx, ry) используем те же параметры калибровки что и для левого
+                    // Convert raw values to normalized range [-1.0, 1.0]
+                    // For right stick (rx, ry) use the same calibration parameters as for left stick
                     float normX = 0.0f;
                     if (joystickData.rx < LEFT_JOYSTICK_X_CENTER) {
                         normX = -1.0f + (joystickData.rx - LEFT_JOYSTICK_X_MIN) / 
@@ -325,7 +325,7 @@ void TaskBluetooth(void *pvParameters) {
                                 (float)(LEFT_JOYSTICK_Y_MAX - LEFT_JOYSTICK_Y_CENTER);
                     }
                     
-                    // Ограничение диапазона и фильтрация
+                    // Limit range and filtering
                     if (fabs(normX) < 0.1f) normX = 0.0f;
                     if (fabs(normY) < 0.1f) normY = 0.0f;
                     
@@ -334,14 +334,14 @@ void TaskBluetooth(void *pvParameters) {
                     if (normY < -1.0f) normY = -1.0f;
                     if (normY > 1.0f) normY = 1.0f;
                     
-                    // Вызываем функцию управления с нормализованными значениями
+                    // Call function with normalized values
                     int leftMotorValue, rightMotorValue;
                     processJoystickControlWithValues(normX, normY, &leftMotorValue, &rightMotorValue);
                 } 
                 else if (currentControlMode == ControlMode::SLIDERS) {
-                    // В режиме слайдеров используем левый стик Y и правый стик Y как отдельные слайдеры
+                    // In sliders mode, use left stick Y and right stick Y as separate sliders
                     
-                    // Преобразуем сырые значения в нормализованный диапазон [-1.0, 1.0]
+                    // Convert raw values to normalized range [-1.0, 1.0]
                     float leftSlider = 0.0f;
                     if (joystickData.y < LEFT_JOYSTICK_Y_CENTER) {
                         leftSlider = -1.0f + (joystickData.y - LEFT_JOYSTICK_Y_MIN) / 
@@ -360,7 +360,7 @@ void TaskBluetooth(void *pvParameters) {
                                 (float)(LEFT_JOYSTICK_Y_MAX - LEFT_JOYSTICK_Y_CENTER);
                     }
                     
-                    // Ограничение диапазона и фильтрация
+                    // Limit range and filtering
                     if (fabs(leftSlider) < 0.1f) leftSlider = 0.0f;
                     if (fabs(rightSlider) < 0.1f) rightSlider = 0.0f;
                     
@@ -369,21 +369,21 @@ void TaskBluetooth(void *pvParameters) {
                     if (rightSlider < -1.0f) rightSlider = -1.0f;
                     if (rightSlider > 1.0f) rightSlider = 1.0f;
                     
-                    // Вызываем функцию управления слайдерами
+                    // Call function with sliders
                     processSlidersControl(leftSlider, rightSlider);
                 }
                 
                 hasNewJoystickData = false;
             }
         } else {
-            // Если BT отключен в настройках и есть активное соединение, отключаемся
+            // If BT is disabled in settings and there's an active connection, disconnect
             if (bleConnected) {
                 disconnectBluetooth();
             }
         }
         
-        // Добавим небольшую задержку для экономии ресурсов
-        vTaskDelay(100 / portTICK_PERIOD_MS);  // Уменьшаем задержку для более быстрой реакции
+        // Add small delay to save resources
+        vTaskDelay(100 / portTICK_PERIOD_MS);  // Reduce delay for faster reaction
     }
 }
 #endif // FEATURE_BLUETOOTH_ENABLED 

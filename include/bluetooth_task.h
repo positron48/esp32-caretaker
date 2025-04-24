@@ -6,25 +6,25 @@
 #include <NimBLEDevice.h>
 #include "joystick_config.h"
 
-// Инициализация Bluetooth
+// Bluetooth initialization
 void initBluetooth();
 
-// Задача для обработки Bluetooth
+// Task for Bluetooth processing
 void TaskBluetooth(void *pvParameters);
 
-// Отключение от Bluetooth-устройства
+// Disconnect from Bluetooth device
 void disconnectBluetooth();
 
-// Получение текущего статуса Bluetooth для веб-интерфейса
+// Get current Bluetooth status for web interface
 String getBtStatus();
 
-// Внешняя переменная для доступа к данным джойстика
+// External variable for accessing joystick data
 extern JoystickData joystickData;
 
-// Флаг наличия новых данных
+// Flag for new data available
 extern bool hasNewJoystickData;
 
-// Флаг подключения
+// Connection flag
 extern bool bleConnected; 
 
 #endif // FEATURE_BLUETOOTH_ENABLED

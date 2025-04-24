@@ -1,30 +1,30 @@
 #include "motor_control.h"
 #include <math.h>
 
-// Глобальная переменная для режима управления
+// Global variable for control mode
 ControlMode currentControlMode = ControlMode::JOYSTICK;
 
-// Статические переменные для хранения предыдущих значений сигналов двигателей
+// Static variables for storing previous motor signal values
 static int lastLeftMotorValue = 0;
 static int lastRightMotorValue = 0;
 
-// Вспомогательная функция для нелинейного преобразования значений джойстика
+// Helper function for nonlinear transformation of joystick values
 float processJoystickAxis(float value) {
-    // Применяем мертвую зону
+    // Apply deadzone
     if (fabs(value) < MOTOR_DEADZONE) {
         return 0.0f;
     }
     
-    // Нормализуем значение после мертвой зоны
+    // Normalize value after deadzone
     float normalized = (fabs(value) - MOTOR_DEADZONE) / (1.0f - MOTOR_DEADZONE);
     
-    // Применяем квадратичную характеристику для более точного контроля на малых скоростях
+    // Apply quadratic characteristic for more precise control at low speeds
     normalized = normalized * normalized;
     
-    // Масштабируем к диапазону PWM с учетом минимальной мощности
+    // Scale to PWM range considering minimum power
     float pwm = MOTOR_MIN_POWER + normalized * (MOTOR_MAX_POWER - MOTOR_MIN_POWER);
     
-    // Возвращаем с учетом знака исходного значения
+    // Return with original value sign
     return value > 0 ? pwm : -pwm;
 }
 
@@ -46,10 +46,10 @@ void initMotors() {
 }
 
 void setMotorSpeed(int pwmLeft, int pwmRight) {
-    // Проверяем, изменились ли значения моторов
+    // Check if motor values have changed
     bool valuesChanged = (pwmLeft != lastLeftMotorValue) || (pwmRight != lastRightMotorValue);
     
-    // Сохраняем новые значения
+    // Save new values
     lastLeftMotorValue = pwmLeft;
     lastRightMotorValue = pwmRight;
     
@@ -71,107 +71,107 @@ void setMotorSpeed(int pwmLeft, int pwmRight) {
         ledcWrite(MOTOR_PWM_CHANNEL_RIGHT2, -pwmRight);
     }
     
-    // Логируем изменения, если они произошли
+    // Log changes if they occurred
     if (valuesChanged) {
-        // Нормализуем значения к диапазону [-1.0, 1.0] для вывода
+        // Normalize values to the range [-1.0, 1.0] for output
         float normLeftMotor = pwmLeft / (float)MOTOR_MAX_POWER;
         float normRightMotor = pwmRight / (float)MOTOR_MAX_POWER;
         
-        Serial.printf("MOTORS: левый=%.2f, правый=%.2f\n", normLeftMotor, normRightMotor);
+        Serial.printf("MOTORS: left=%.2f, right=%.2f\n", normLeftMotor, normRightMotor);
     }
 }
 
 void processJoystickControl(float x, float y) {
-    // Обработка входных значений
+    // Processing input values
     float processedX = processJoystickAxis(x);
     float processedY = processJoystickAxis(y);
     
     float leftMotor = 0;
     float rightMotor = 0;
     
-    // Проверяем режим поворота на месте
+    // Check for in-place rotation mode
     if (fabs(x) > MOTOR_TURN_THRESHOLD && fabs(y) < MOTOR_DEADZONE) {
-        // Разворот на месте - один мотор вперед, другой назад
+        // In-place rotation - one motor forward, the other backward
         float turnPower = fabs(processedX);
         if (x > 0) {
-            // Поворот вправо
+            // Turn right
             leftMotor = turnPower;
             rightMotor = -turnPower;
         } else {
-            // Поворот влево
+            // Turn left
             leftMotor = -turnPower;
             rightMotor = turnPower;
         }
     } else {
-        // Обычное движение
+        // Normal movement
         leftMotor = processedY;
         rightMotor = processedY;
         
-        // Применяем поворот путем замедления одной гусеницы
+        // Apply turn by slowing one track
         if (fabs(processedX) > 0) {
             float turnFactor = 1.0f - fabs(processedX / MOTOR_MAX_POWER);
             if (x > 0) {
-                // Поворот вправо
+                // Turn right
                 rightMotor *= turnFactor;
             } else {
-                // Поворот влево
+                // Turn left
                 leftMotor *= turnFactor;
             }
         }
     }
     
-    // Применяем ограничения и отправляем на моторы
+    // Apply constraints and send to motors
     int pwmLeft = constrain(leftMotor, -MOTOR_MAX_POWER, MOTOR_MAX_POWER);
     int pwmRight = constrain(rightMotor, -MOTOR_MAX_POWER, MOTOR_MAX_POWER);
     
     setMotorSpeed(pwmLeft, pwmRight);
 }
 
-// Новая функция для получения значений моторов без отправки на драйвер
+// New function to get motor values without sending to driver
 void processJoystickControlWithValues(float x, float y, int* leftMotor, int* rightMotor) {
-    // Обработка входных значений
+    // Processing input values
     float processedX = processJoystickAxis(x);
     float processedY = processJoystickAxis(y);
     
     float leftMotorValue = 0;
     float rightMotorValue = 0;
     
-    // Проверяем режим поворота на месте
+    // Check for in-place rotation mode
     if (fabs(x) > MOTOR_TURN_THRESHOLD && fabs(y) < MOTOR_DEADZONE) {
-        // Разворот на месте - один мотор вперед, другой назад
+        // In-place rotation - one motor forward, the other backward
         float turnPower = fabs(processedX);
         if (x > 0) {
-            // Поворот вправо
+            // Turn right
             leftMotorValue = turnPower;
             rightMotorValue = -turnPower;
         } else {
-            // Поворот влево
+            // Turn left
             leftMotorValue = -turnPower;
             rightMotorValue = turnPower;
         }
     } else {
-        // Обычное движение
+        // Normal movement
         leftMotorValue = processedY;
         rightMotorValue = processedY;
         
-        // Применяем поворот путем замедления одной гусеницы
+        // Apply turn by slowing one track
         if (fabs(processedX) > 0) {
             float turnFactor = 1.0f - fabs(processedX / MOTOR_MAX_POWER);
             if (x > 0) {
-                // Поворот вправо
+                // Turn right
                 rightMotorValue *= turnFactor;
             } else {
-                // Поворот влево
+                // Turn left
                 leftMotorValue *= turnFactor;
             }
         }
     }
     
-    // Применяем ограничения и отправляем на драйвер
+    // Apply constraints and send to driver
     *leftMotor = constrain(leftMotorValue, -MOTOR_MAX_POWER, MOTOR_MAX_POWER);
     *rightMotor = constrain(rightMotorValue, -MOTOR_MAX_POWER, MOTOR_MAX_POWER);
     
-    // Также отправляем на моторы
+    // Also send to motors
     setMotorSpeed(*leftMotor, *rightMotor);
 }
 

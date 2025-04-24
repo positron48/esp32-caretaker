@@ -2,14 +2,14 @@
 
 #include "config.h" // Include config.h for constants
 
-// Структура данных для хранения положения джойстиков и кнопок
+// Data structure for storing joystick positions and buttons
 struct JoystickData {
-    int16_t x = 0;    // левый джойстик, x-axis
-    int16_t y = 0;    // левый джойстик, y-axis
-    int16_t rx = 0;   // правый джойстик, x-axis
-    int16_t ry = 0;   // правый джойстик, y-axis
-    uint32_t buttons = 0; // битовые флаги для кнопок
+    int16_t x = 0;        // left joystick, x-axis
+    int16_t y = 0;        // left joystick, y-axis
+    int16_t rx = 0;       // right joystick, x-axis
+    int16_t ry = 0;       // right joystick, y-axis
+    uint32_t buttons = 0; // bit flags for buttons
 };
 
-// Глобальный флаг активации BT джойстика
+// Global flag for BT joystick activation
 extern bool btControlEnabled; 

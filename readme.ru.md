@@ -98,7 +98,7 @@
 2. **Выбор функций:**
    * Измените переключатели функций в `include/config.h`:
    ```cpp
-   #define FEATURE_BLUETOOTH_ENABLED 1  // Установите 0 для отключения
+   #define FEATURE_BLUETOOTH_ENABLED 0  // Установите 1 для включения
    #define FEATURE_LED_CONTROL_ENABLED 1
    #define FEATURE_TASK_STATS_ENABLED 0
    ```

@@ -32,13 +32,13 @@ void TaskHttpServer(void* parameter) {
     server.on("/led", HTTP_GET, [&server]() {
         int pwmValue = 0;
         
-        // Проверяем, пришел ли параметр brightness для плавного управления
+        // Check if brightness parameter is provided for smooth control
         if (server.hasArg("brightness")) {
-            // Получаем значение яркости (0-100)
+            // Get brightness value (0-100)
             int brightness = server.arg("brightness").toInt();
             
-            // Преобразуем значение яркости в PWM значение (0-4095)
-            // Используем максимум из LED_RESOLUTION (12 бит = 4095)
+            // Convert brightness value to PWM value (0-4095)
+            // Using maximum from LED_RESOLUTION (12 bit = 4095)
             pwmValue = map(brightness, 0, 100, 0, (1 << LED_RESOLUTION) - 1);
         }
         
@@ -177,7 +177,7 @@ void TaskHttpServer(void* parameter) {
 
             const char* mode = doc["mode"] | "joystick";
 
-            // Если переключаем режим управления - всегда обрабатываем, даже при активном BT
+            // If switching control mode - always process, even with active BT
             if (doc.containsKey("mode") && !doc.containsKey("x") && !doc.containsKey("y") && 
                 !doc.containsKey("left") && !doc.containsKey("right")) {
                 
@@ -191,7 +191,7 @@ void TaskHttpServer(void* parameter) {
                 return;
             }
 
-            // Обработка команд управления - только если BT не активен или не подключен
+            // Process control commands - only if BT is not active or not connected
             #if FEATURE_BLUETOOTH_ENABLED
             if (btControlEnabled && bleConnected) {
                 server.send(200, "text/plain", "BT control active");
@@ -199,7 +199,7 @@ void TaskHttpServer(void* parameter) {
             }
             #endif
 
-            // Обработка команд управления
+            // Process control commands
             if (strcmp(mode, "joystick") == 0) {
                 currentControlMode = ControlMode::JOYSTICK;
                 float x = doc["x"] | 0.0f;
@@ -223,13 +223,13 @@ void TaskHttpServer(void* parameter) {
     server.on("/bt", HTTP_GET, [&server]() {
         String state = server.arg("state");
         
-        // Параметр для определения текущего режима управления
+        // Parameter to determine current control mode
         String mode = server.arg("mode");
         
         if (state == "on") {
             btControlEnabled = true;
             
-            // Устанавливаем режим управления в зависимости от параметра
+            // Set control mode based on parameter
             if (mode == "sliders") {
                 currentControlMode = ControlMode::SLIDERS;
             } else {
@@ -240,7 +240,7 @@ void TaskHttpServer(void* parameter) {
         } else if (state == "off") {
             btControlEnabled = false;
             
-            // Устанавливаем режим управления в зависимости от параметра
+            // Set control mode based on parameter
             if (mode == "sliders") {
                 currentControlMode = ControlMode::SLIDERS;
             } else {
@@ -273,7 +273,7 @@ void TaskHttpServer(void* parameter) {
 
     while (true) {
         server.handleClient();
-        // Используем vTaskDelay вместо delay для лучшего планирования задач
+        // Use vTaskDelay instead of delay for better task scheduling
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 } 

@@ -98,7 +98,7 @@ The project is built on the ESP32 Arduino framework and utilizes FreeRTOS for mu
 2. **Feature Selection:**
    * Modify feature toggles in `include/config.h`:
    ```cpp
-   #define FEATURE_BLUETOOTH_ENABLED 1  // Set to 0 to disable
+   #define FEATURE_BLUETOOTH_ENABLED 0  // Set to 1 to enable
    #define FEATURE_LED_CONTROL_ENABLED 1
    #define FEATURE_TASK_STATS_ENABLED 0
    ```

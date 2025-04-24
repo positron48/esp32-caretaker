@@ -9,7 +9,7 @@ enum class ControlMode {
     SLIDERS
 };
 
-// Глобальная переменная для хранения текущего режима управления
+// Global variable to store current control mode
 extern ControlMode currentControlMode;
 
 // Motor control functions

@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 void initWiFi() {
-    // Загрузка учетных данных из .env
+    // Loading credentials from .env
     const char* ssid = WIFI_SSID;
     const char* password = WIFI_PASSWORD;
     
