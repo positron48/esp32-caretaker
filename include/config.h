@@ -1,5 +1,5 @@
 // Feature toggles - Set to 0 to disable the feature, 1 to enable
-#define FEATURE_BLUETOOTH_ENABLED 1
+#define FEATURE_BLUETOOTH_ENABLED 0
 #define FEATURE_LED_CONTROL_ENABLED 1
 #define FEATURE_TASK_STATS_ENABLED 0
 

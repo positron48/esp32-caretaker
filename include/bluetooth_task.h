@@ -1,5 +1,7 @@
 #pragma once
 
+#if FEATURE_BLUETOOTH_ENABLED
+
 #include <Arduino.h>
 #include <NimBLEDevice.h>
 #include "joystick_config.h"
@@ -24,3 +26,5 @@ extern bool hasNewJoystickData;
 
 // Флаг подключения
 extern bool bleConnected; 
+
+#endif // FEATURE_BLUETOOTH_ENABLED

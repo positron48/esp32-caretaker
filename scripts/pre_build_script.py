@@ -10,15 +10,15 @@ def generate_html_header(target, source, env):
     
     print(f"Converting and compressing {html_file} to {header_file}")
     
-    # Read the HTML content
-    with open(html_file, 'r') as f:
+    # Read the HTML content using explicit UTF-8 encoding
+    with open(html_file, 'r', encoding='utf-8') as f:
         content = f.read()
     
     # Compress with gzip
     compressed_content = gzip.compress(content.encode('utf-8'))
     
     # Write the header file with compressed content as byte array
-    with open(header_file, 'w') as f:
+    with open(header_file, 'w', encoding='utf-8') as f:
         f.write('#pragma once\n\n')
         f.write(f'const size_t INDEX_HTML_SIZE = {len(compressed_content)};\n\n')
         f.write('const uint8_t INDEX_HTML[] PROGMEM = {\n    ')
