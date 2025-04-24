@@ -91,8 +91,8 @@ The project is built on the ESP32 Arduino framework and utilizes FreeRTOS for mu
 1. **WiFi Settings:**
    * Create a `.env` file in the root directory:
    ```
-   WIFI_SSID="YOUR_WIFI_SSID"
-   WIFI_PASSWORD="YOUR_WIFI_PASSWORD"
+   WIFI_SSID=your_wifi_name
+   WIFI_PASSWORD=your_wifi_password
    ```
 
 2. **Feature Selection:**
