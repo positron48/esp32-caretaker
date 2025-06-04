@@ -1977,6 +1977,39 @@
             startY = event.touches[0].clientY;
             isScrolling = false;
         }, { passive: false });
+
+        // --- WASD Keyboard Control ---
+        const keyState = { w: false, a: false, s: false, d: false };
+
+        function updateKeyboardControl() {
+            if (isBtActive) return; // Skip if Bluetooth control is active
+
+            let x = 0;
+            let y = 0;
+            if (keyState.a) x -= 1;
+            if (keyState.d) x += 1;
+            if (keyState.w) y += 1;
+            if (keyState.s) y -= 1;
+
+            sendJoystickData(x, y, true);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+            const key = e.key.toLowerCase();
+            if (keyState.hasOwnProperty(key) && !keyState[key]) {
+                keyState[key] = true;
+                updateKeyboardControl();
+            }
+        });
+
+        document.addEventListener('keyup', function(e) {
+            const key = e.key.toLowerCase();
+            if (keyState.hasOwnProperty(key) && keyState[key]) {
+                keyState[key] = false;
+                updateKeyboardControl();
+            }
+        });
     </script>
 </body>
 </html>
