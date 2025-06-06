@@ -2026,7 +2026,16 @@
 
         // --- Keyboard Control (WASD / Arrow Keys) ---
         const keyState = { w: false, a: false, s: false, d: false };
-        const keyAlias = { arrowup: 'w', arrowdown: 's', arrowleft: 'a', arrowright: 'd' };
+        const keyAlias = {
+            arrowup: 'w',
+            arrowdown: 's',
+            arrowleft: 'a',
+            arrowright: 'd',
+            'ц': 'w',
+            'ф': 'a',
+            'ы': 's',
+            'в': 'd'
+        };
 
         function updateKeyboardControl() {
             if (isBtActive) return; // Skip if Bluetooth control is active
