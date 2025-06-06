@@ -1562,6 +1562,52 @@
             rightThumb.style.top = '50%';
         }
 
+        function updateJoystickVisual(x, y) {
+            const rect = joystick.getBoundingClientRect();
+            const maxOffset = rect.width / 2 - stick.offsetWidth / 2;
+            const offsetX = x * maxOffset;
+            const offsetY = -y * maxOffset;
+            stick.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
+        }
+
+        function joystickToSliders(x, y) {
+            let left = y;
+            let right = y;
+            if (Math.abs(x) > 0.2 && Math.abs(y) < 0.05) {
+                const turn = Math.abs(x);
+                if (x > 0) {
+                    left = turn;
+                    right = -turn;
+                } else {
+                    left = -turn;
+                    right = turn;
+                }
+            } else {
+                const factor = 1 - Math.abs(x);
+                if (x > 0) {
+                    right *= factor;
+                } else if (x < 0) {
+                    left *= factor;
+                }
+            }
+            return { left, right };
+        }
+
+        function updateSliderVisual(left, right) {
+            setThumbPosition(leftThumb, left);
+            setThumbPosition(rightThumb, right);
+        }
+
+        function setThumbPosition(thumb, value) {
+            const rect = thumb.parentElement.getBoundingClientRect();
+            const thumbSize = thumb.offsetHeight;
+            const minTop = thumbSize / 2;
+            const maxTop = rect.height - thumbSize / 2;
+            const normalized = (-value + 1) / 2;
+            const newTop = minTop + normalized * (maxTop - minTop);
+            thumb.style.top = (newTop / rect.height * 100) + '%';
+        }
+
         // Predefined event handler for initializeSettings
         function initializeSettings() {
             // Get camera settings
@@ -1978,8 +2024,9 @@
             isScrolling = false;
         }, { passive: false });
 
-        // --- WASD Keyboard Control ---
+        // --- Keyboard Control (WASD / Arrow Keys) ---
         const keyState = { w: false, a: false, s: false, d: false };
+        const keyAlias = { arrowup: 'w', arrowdown: 's', arrowleft: 'a', arrowright: 'd' };
 
         function updateKeyboardControl() {
             if (isBtActive) return; // Skip if Bluetooth control is active
@@ -1991,12 +2038,20 @@
             if (keyState.w) y += 1;
             if (keyState.s) y -= 1;
 
-            sendJoystickData(x, y, true);
+            if (isJoystickMode) {
+                updateJoystickVisual(x, y);
+                sendJoystickData(x, y, true);
+            } else {
+                const { left, right } = joystickToSliders(x, y);
+                updateSliderVisual(left, right);
+                sendSliderData({ mode: 'sliders', left, right }, true);
+            }
         }
 
         document.addEventListener('keydown', function(e) {
             if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
-            const key = e.key.toLowerCase();
+            let key = e.key.toLowerCase();
+            key = keyAlias[key] || key;
             if (keyState.hasOwnProperty(key) && !keyState[key]) {
                 keyState[key] = true;
                 updateKeyboardControl();
@@ -2004,7 +2059,8 @@
         });
 
         document.addEventListener('keyup', function(e) {
-            const key = e.key.toLowerCase();
+            let key = e.key.toLowerCase();
+            key = keyAlias[key] || key;
             if (keyState.hasOwnProperty(key) && keyState[key]) {
                 keyState[key] = false;
                 updateKeyboardControl();

@@ -16,7 +16,7 @@ This project implements a remote-controlled robot using an ESP32-CAM board. It f
   * **Web Interface Joystick:** Intuitive virtual joystick control
   * **Web Interface Sliders:** Fine-grained control over individual motors
   * **Bluetooth Controller:** Support for physical Bluetooth controllers (e.g., ExpressLRS Joystick)
-  * **Keyboard WASD:** Use W/A/S/D keys in the web interface
+  * **Keyboard:** Use WASD or arrow keys with on-screen feedback
   * **Adjustable Video Settings:** Multiple resolution options (from QQVGA to UXGA)
 * **LED Brightness Control:** PWM-based control of LED
 * **Resource Monitoring:** Optional FreeRTOS task statistics for performance analysis
@@ -144,7 +144,7 @@ pio run --target upload
    * **Control Mode** - Switch between joystick and slider control
    * **Joystick** - Drag to control direction and speed
    * **Sliders** - Adjust left and right motor speeds individually
-   * **WASD Keyboard** - Use W/A/S/D keys for movement
+   * **Keyboard Control** - WASD or arrow keys update the on-screen controls
    * **Video Settings** - Change resolution for better quality or performance
    * **LED Control** - Adjust brightness of the onboard LED
    * **Bluetooth** - Connect to a physical Bluetooth controller
